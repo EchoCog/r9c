@@ -131,6 +131,11 @@ extern void b_tensor_op(char **);
 extern void b_membrane_alloc(char **);
 extern void b_cognitive_status(char **);
 
+/* Example Cognitive Commands (when ENABLE_COGNITIVE_EXAMPLES is defined) */
+extern void b_load_example_modules(char **);
+extern void b_test_pattern(char **);
+extern void b_test_attention(char **);
+
 /* Initialization and Cleanup */
 extern int cognitive_init(void);
 extern void cognitive_cleanup(void);

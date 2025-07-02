@@ -64,6 +64,11 @@ static struct {
 #if ENABLE_COGNITIVE_GRAMMAR
 	{ b_cognitive_status,	"cognitive-status" },
 #endif
+#if ENABLE_COGNITIVE_EXAMPLES
+	{ b_load_example_modules, "load-example-modules" },
+	{ b_test_pattern,	"test-pattern" },
+	{ b_test_attention,	"test-attention" },
+#endif
 #if ENABLE_IPC_EXTENSIONS
 	{ b_ipc_listen,		"ipc-listen" },
 	{ b_ipc_connect,	"ipc-connect" },
