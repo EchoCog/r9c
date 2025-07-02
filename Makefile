@@ -15,11 +15,12 @@ _LDFLAGS = -L$(PREFIX)/lib $(LDFLAGS)
 
 BINS = history mksignal mkstatval tripping
 HEADERS = edit.h getgroups.h input.h jbwrap.h proto.h rc.h rlimit.h stat.h \
-	wait.h
+	wait.h cognitive.h
 OBJS = builtins.o edit-$(EDIT).o except.o exec.o fn.o footobar.o getopt.o \
 	glob.o glom.o hash.o heredoc.o input.o lex.o list.o main.o match.o \
 	nalloc.o open.o parse.o print.o redir.o sigmsgs.o signal.o status.o \
-	system.o tree.o utils.o var.o wait.o walk.o which.o
+	system.o tree.o utils.o var.o wait.o walk.o which.o cognitive.o \
+	cognitive-example.o
 
 all: rc
 

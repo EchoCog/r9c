@@ -7,6 +7,7 @@
 
 #include "input.h"
 #include "version.h"
+#include "cognitive.h"
 
 extern char **environ;
 
@@ -86,6 +87,11 @@ quitopts:
 	initsignal();
 	inithash();
 	initparse();
+#if ENABLE_COGNITIVE_GRAMMAR
+	if (cognitive_init() != 0) {
+		fprint(2, "rc: warning: cognitive extensions initialization failed\n");
+	}
+#endif
 	assigndefault("ifs", " ", "\t", "\n", (void *)0);
 	assigndefault("nl", "\n", (void *)0);
 #ifdef DEFAULTPATH

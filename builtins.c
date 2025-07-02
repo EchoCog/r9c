@@ -18,6 +18,7 @@
 #include "jbwrap.h"
 #include "rlimit.h"
 #include "sigmsgs.h"
+#include "cognitive.h"
 
 #if RC_ADDON
 #include "addon.c"
@@ -60,6 +61,31 @@ static struct {
 	{ b_wait,	"wait" },
 	{ b_whatis,	"whatis" },
 	{ b_dot,	"." },
+#if ENABLE_COGNITIVE_GRAMMAR
+	{ b_cognitive_status,	"cognitive-status" },
+#endif
+#if ENABLE_COGNITIVE_EXAMPLES
+	{ b_load_example_modules, "load-example-modules" },
+	{ b_test_pattern,	"test-pattern" },
+	{ b_test_attention,	"test-attention" },
+#endif
+#if ENABLE_IPC_EXTENSIONS
+	{ b_ipc_listen,		"ipc-listen" },
+	{ b_ipc_connect,	"ipc-connect" },
+	{ b_ipc_send,		"ipc-send" },
+	{ b_ipc_recv,		"ipc-recv" },
+#endif
+#if ENABLE_SCHEME_INTEGRATION
+	{ b_scheme_eval,	"scheme-eval" },
+	{ b_hypergraph_encode,	"hypergraph-encode" },
+	{ b_pattern_match,	"pattern-match" },
+	{ b_attention_allocate,	"attention-allocate" },
+#endif
+#if ENABLE_TENSOR_OPERATIONS
+	{ b_tensor_create,	"tensor-create" },
+	{ b_tensor_op,		"tensor-op" },
+	{ b_membrane_alloc,	"membrane-alloc" },
+#endif
 #ifdef ADDONS
 	ADDONS
 #endif
