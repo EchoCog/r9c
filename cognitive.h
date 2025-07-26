@@ -26,7 +26,6 @@
 
 /* Forward declarations */
 typedef struct CognitiveModule CognitiveModule;
-typedef struct TensorMembrane TensorMembrane;
 typedef struct AttentionState AttentionState;
 
 /* IPC Extension Interface */

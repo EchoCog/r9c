@@ -32,7 +32,7 @@ $(V).SILENT:
 rc: $(OBJS)
 	@echo "LINK $@"
 	[ "$(EDIT)" = "null" ] && ledit="" || ledit="-l$(EDIT)"; \
-	$(CC) $(_LDFLAGS) $(_CFLAGS) -o $@ $(OBJS) $$ledit $(LDLIBS)
+	$(CC) $(_LDFLAGS) $(_CFLAGS) -o $@ $(OBJS) $$ledit $(LDLIBS) -lm -ldl
 
 $(OBJS): Makefile $(HEADERS) config.h
 builtins.o: addon.c
