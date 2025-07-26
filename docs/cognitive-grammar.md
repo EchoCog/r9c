@@ -1,191 +1,257 @@
-# Cognitive Grammar
+# Cognitive Grammar Kernel Implementation
 
 ## Overview
 
-This document describes the hypergraph encoding system, Scheme integration, and ECAN (Economic Attention Allocation) attention management for the cognitive grammar layer.
+This document describes the implemented hypergraph encoding system, ECAN attention allocation, and PLN probabilistic reasoning for the cognitive grammar kernel in the r9 shell.
 
-## Hypergraph Encoding
-
-### Conceptual Framework
-The cognitive grammar represents knowledge and processes as hypergraphs where:
-- Nodes represent concepts, words, or cognitive states
-- Hyperedges represent relationships, transformations, or rules
-- Weights encode strength of associations and attention allocation
+## Hypergraph Encoding Implementation
 
 ### Data Structures
-```scheme
-;; Basic hypergraph node
-(define-struct node
-  (id concept strength links))
+The cognitive kernel uses C structures for efficient hypergraph representation:
 
-;; Hyperedge connecting multiple nodes  
-(define-struct hyperedge
-  (id nodes relation weight))
-
-;; Complete hypergraph
-(define-struct hypergraph
-  (nodes edges attention-map))
-```
-
-### Shell Command Mapping
-Shell commands are mapped to cognitive transformations:
-```scheme
-;; Command parsing as pattern recognition
-(define (parse-command cmd-string)
-  (hypergraph-pattern-match cmd-string command-patterns))
-
-;; Command execution as cognitive state transition
-(define (execute-command cmd context)
-  (apply-cognitive-transformation cmd context attention-state))
-```
-
-## Scheme Integration
-
-### Core Functions
-```scheme
-;; Initialize cognitive grammar system
-(define (init-cognitive-grammar)
-  (load-base-patterns)
-  (initialize-attention-network)
-  (setup-command-mappings))
-
-;; Process shell input through cognitive layer
-(define (process-shell-input input context)
-  (let ((parsed (parse-command input))
-        (attended (allocate-attention parsed)))
-    (execute-with-context attended context)))
-
-;; Update attention allocation based on results
-(define (update-attention-state result feedback)
-  (adjust-node-strengths result)
-  (propagate-attention-changes feedback))
-```
-
-### Pattern Recognition
-```scheme
-;; Define cognitive patterns for shell operations
-(define command-patterns
-  '((pipe-pattern (cmd1 "|" cmd2) -> (data-flow cmd1 cmd2))
-    (redirect-pattern (cmd ">" file) -> (output-redirect cmd file))
-    (variable-pattern ("$" var) -> (variable-access var))
-    (function-pattern ("fn" name body) -> (function-definition name body))))
-
-;; Pattern matching with attention weighting
-(define (weighted-pattern-match input patterns attention)
-  (rank-by-attention 
-    (filter-matches input patterns)
-    attention))
-```
-
-## ECAN Attention Allocation
-
-### Attention Economics
-The Economic Attention Allocation (ECAN) system manages cognitive resources:
-
-```scheme
-;; Attention value structure
-(define-struct attention-value
-  (short-term-importance
-   long-term-importance  
-   urgency
-   confidence))
-
-;; Attention allocation algorithm
-(define (allocate-attention nodes current-context)
-  (let ((importance-map (calculate-importance nodes))
-        (urgency-map (calculate-urgency nodes current-context))
-        (budget (get-attention-budget)))
-    (distribute-attention budget importance-map urgency-map)))
-
-;; Attention spreading activation
-(define (spread-attention node-set activation-level)
-  (for-each
-    (lambda (node)
-      (update-node-attention node activation-level)
-      (propagate-to-neighbors node (* activation-level 0.8)))
-    node-set))
-```
-
-### Dynamic Resource Management
-```scheme
-;; Monitor and adjust attention allocation
-(define (attention-management-loop)
-  (while #t
-    (let ((current-state (get-cognitive-state))
-          (performance (get-performance-metrics)))
-      (adjust-attention-parameters current-state performance)
-      (garbage-collect-low-attention-nodes)
-      (sleep attention-update-interval))))
-
-;; Attention-based memory management
-(define (cognitive-garbage-collection threshold)
-  (remove-nodes-below-threshold threshold)
-  (consolidate-similar-patterns)
-  (refresh-important-connections))
-```
-
-## PLN Integration (Probabilistic Logic Networks)
-
-### Uncertainty Reasoning
-```scheme
-;; Truth value representation
-(define-struct truth-value
-  (strength confidence))
-
-;; Probabilistic inference rules
-(define (plr-deduction premise1 premise2)
-  (make-truth-value
-    (* (tv-strength premise1) (tv-strength premise2))
-    (min (tv-confidence premise1) (tv-confidence premise2))))
-
-;; Integration with shell reasoning
-(define (probabilistic-command-evaluation cmd context)
-  (let ((confidence (estimate-success-probability cmd context))
-        (importance (calculate-command-importance cmd)))
-    (weighted-execution cmd confidence importance)))
-```
-
-### Inference Engine
-```scheme
-;; Forward chaining inference
-(define (forward-chain facts rules)
-  (let loop ((derived-facts facts))
-    (let ((new-facts (apply-rules derived-facts rules)))
-      (if (equal? new-facts derived-facts)
-          derived-facts
-          (loop new-facts)))))
-
-;; Backward chaining for goal achievement
-(define (backward-chain goal rules facts)
-  (if (member goal facts)
-      '(success)
-      (find-proof-path goal rules facts)))
-```
-
-## Integration with Shell Operations
-
-### Command Enhancement
-Every shell command is enhanced with cognitive processing:
-1. Parse command through hypergraph pattern recognition
-2. Allocate attention based on command importance and context
-3. Execute with probabilistic reasoning about outcomes
-4. Update cognitive state based on results
-5. Adjust attention allocation for future commands
-
-### Emergent Behavior
-The system enables emergent cognitive patterns through:
-- Cross-command attention propagation
-- Pattern reinforcement through successful executions
-- Adaptive command prediction and suggestion
-- Context-aware resource allocation
-
-## Configuration Parameters
-
-Key cognitive parameters in config.h:
 ```c
-#define ATTENTION_BUDGET 1000
-#define ATTENTION_DECAY_RATE 0.95
-#define PATTERN_THRESHOLD 0.7
-#define INFERENCE_DEPTH 5
-#define MEMORY_CONSOLIDATION_INTERVAL 100
+typedef struct HypergraphNode {
+    char *name;
+    float attention_value;
+    int concept_type;  /* 0=concept, 1=link, 2=predicate */
+    struct HypergraphNode **children;
+    int child_count;
+    struct HypergraphNode *next;
+} HypergraphNode;
 ```
+
+### Encoding Algorithm
+The `encode_to_hypergraph()` function converts text input to Scheme-like hypergraph representation:
+
+```c
+// Example: "hello world" becomes:
+// (hypergraph (concept "hello") (concept "world") 
+//   (link sequence (ordered-link "hello" "world")))
+```
+
+### Shell Command Integration
+Commands are automatically encoded when using `hypergraph-encode`:
+
+```bash
+$ hypergraph-encode "The cat sits on the mat"
+Hypergraph encoding: (hypergraph (concept "The") (concept "cat") (concept "sits") 
+  (concept "on") (concept "the") (concept "mat") 
+  (link sequence (ordered-link "The" "cat") (ordered-link "cat" "sits") ...))
+```
+
+## ECAN Attention Allocation Implementation
+
+### ECAN Values Structure
+```c
+typedef struct {
+    float short_term_importance;    // STI - immediate relevance
+    float long_term_importance;     // LTI - persistent significance  
+    float very_long_term_importance; // VLTI - deep memory relevance
+    unsigned int stimulation_level;  // current activation
+} ECANValues;
+```
+
+### Attention Calculation
+The `calculate_ecan_attention()` function implements economic attention distribution:
+
+```c
+float calculate_ecan_attention(const char *input, ECANValues *ecan) {
+    size_t complexity = strlen(input);
+    
+    ecan->short_term_importance = complexity * 0.1f;
+    ecan->long_term_importance = complexity * 0.05f; 
+    ecan->very_long_term_importance = complexity * 0.01f;
+    ecan->stimulation_level = (unsigned int)(complexity * 2);
+    
+    return ecan->short_term_importance * 0.6f + 
+           ecan->long_term_importance * 0.3f + 
+           ecan->very_long_term_importance * 0.1f;
+}
+```
+
+### Usage Example
+```bash
+$ attention-allocate "complex cognitive processing task"
+ECAN Attention Allocated:
+  Total Attention: 250
+  Short-term Importance: 330
+  Long-term Importance: 165
+  Very Long-term Importance: 33
+  Stimulation Level: 66
+```
+
+## PLN Probabilistic Logic Networks Implementation
+
+### Truth Value Representation
+```c
+typedef struct {
+    float strength;    /* Probability [0,1] */
+    float confidence;  /* Confidence [0,1] */
+} TruthValue;
+```
+
+### Inference Rules
+Implemented PLN operations include:
+
+```c
+// Deduction: A→B ∧ B→C ⊢ A→C
+TruthValue pln_deduction(TruthValue premise1, TruthValue premise2) {
+    TruthValue result;
+    result.strength = premise1.strength * premise2.strength;
+    result.confidence = premise1.confidence * premise2.confidence;
+    return result;
+}
+
+// Induction: Evidence-based generalization
+TruthValue pln_induction(TruthValue evidence, float prior_strength) {
+    TruthValue result;
+    result.strength = (evidence.strength + prior_strength) / 2.0f;
+    result.confidence = evidence.confidence * 0.8f;
+    return result;
+}
+```
+
+### PLN Shell Integration
+```bash
+$ pln-infer "All birds fly"
+PLN Inference Result:
+  Premises: All birds fly
+  Conclusion: (conclusion "All birds fly" (tv 65 72))
+  Truth Value: (65, 72)
+```
+
+## Cognitive Pattern Transformations
+
+### Implementation
+The `cognitive-transform` command applies patterns with attention weighting:
+
+```c
+void b_cognitive_transform(char **av) {
+    const char *pattern = av[1];
+    const char *input = av[2];
+    
+    HypergraphKernel *kernel = find_hypergraph_kernel("default");
+    if (kernel && kernel->transform) {
+        char *output = NULL;
+        kernel->transform(pattern, input, &output);
+        // Display transformation result
+    }
+}
+```
+
+### Usage Examples
+```bash
+$ cognitive-transform "greeting" "hello world"
+Cognitive Transform Result:
+  Pattern: greeting
+  Input: hello world
+  Transform: (transform (pattern "greeting") (input "hello world") (attention 83))
+
+$ cognitive-transform "command" "ls -la /tmp"  
+Cognitive Transform Result:
+  Pattern: command
+  Input: ls -la /tmp
+  Transform: (transform (pattern "command") (input "ls -la /tmp") (attention 83))
+```
+
+## Scheme Integration Implementation
+
+### Basic Expression Evaluator
+The cognitive kernel includes a minimal Scheme evaluator:
+
+```c
+int scheme_eval(const char *expr) {
+    if (strncmp(expr, "(+ ", 3) == 0) {
+        int a, b;
+        if (sscanf(expr, "(+ %d %d)", &a, &b) == 2) {
+            return a + b;
+        }
+    } else if (strncmp(expr, "(* ", 3) == 0) {
+        int a, b;  
+        if (sscanf(expr, "(* %d %d)", &a, &b) == 2) {
+            return a * b;
+        }
+    }
+    return 0;
+}
+```
+
+### Scheme Function Calls
+Enhanced `scheme_call()` supports cognitive operations:
+
+```c
+char *scheme_call(const char *func, char **args) {
+    if (strcmp(func, "hypergraph-encode") == 0) {
+        // Use hypergraph kernel
+    } else if (strcmp(func, "ecan-allocate") == 0) {
+        // Perform ECAN attention allocation
+    } else if (strcmp(func, "pln-infer") == 0) {
+        // Execute PLN inference
+    }
+}
+```
+
+## Shell Integration Architecture
+
+### Command Processing Pipeline
+1. **Input Parsing**: Shell command parsed through cognitive layer
+2. **Hypergraph Encoding**: Command structure encoded as hypergraph
+3. **Attention Allocation**: ECAN calculates resource distribution
+4. **Pattern Matching**: Cognitive patterns applied to command
+5. **PLN Reasoning**: Probabilistic inference about outcomes
+6. **Execution**: Command executed with cognitive context
+7. **State Update**: Cognitive state updated based on results
+
+### Cognitive Module System
+The implementation uses a plugin architecture:
+
+```c
+typedef struct CognitiveModule {
+    const char *name;
+    const char *version;
+    int (*init)(void);
+    int (*process)(const char *input, char **output);
+    void (*cleanup)(void);
+    struct CognitiveModule *next;
+} CognitiveModule;
+```
+
+### Available Commands
+
+**Core Cognitive Commands:**
+- `cognitive-status` - Display system state and loaded modules
+- `hypergraph-encode <text>` - Convert text to hypergraph representation
+- `attention-allocate <input>` - ECAN attention calculation
+- `pln-infer <premises>` - Probabilistic logical inference
+- `cognitive-transform <pattern> <input>` - Pattern transformation
+- `scheme-eval <expression>` - Basic Scheme expression evaluation
+
+**Example Module Commands:**
+- `load-example-modules` - Load pattern recognition and attention modules
+- `test-pattern <input>` - Test pattern recognition
+- `test-attention <input>` - Test attention allocation
+
+## Configuration
+
+Enable cognitive features in `config.h`:
+```c
+#define ENABLE_COGNITIVE_GRAMMAR 1
+#define ENABLE_IPC_EXTENSIONS 1  
+#define ENABLE_SCHEME_INTEGRATION 1
+#define ENABLE_COGNITIVE_EXAMPLES 1
+```
+
+## Testing
+
+Comprehensive test suites verify implementation:
+```bash
+./test-cognitive.sh        # Basic cognitive functionality
+./test-cognitive-kernel.sh # Enhanced kernel features
+```
+
+The tests verify:
+- Hypergraph encoding with proper Scheme syntax
+- ECAN attention allocation with STI/LTI/VLTI calculation
+- PLN inference with truth value computation
+- Cognitive pattern transformations
+- Integration between all cognitive components

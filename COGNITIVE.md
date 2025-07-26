@@ -11,14 +11,21 @@ The cognitive extensions provide a foundational architecture for integrating dis
 ### Basic Usage
 
 ```bash
-# Check cognitive system status
-cognitive-status
+# Test hypergraph encoding
+hypergraph-encode "hello world"
+# Output: (hypergraph (concept "hello") (concept "world") (link sequence (ordered-link "hello" "world") ))
 
-# Load example cognitive modules
-load-example-modules
+# Test ECAN attention allocation  
+attention-allocate "complex cognitive processing task"
+# Output: ECAN Attention Allocated with STI/LTI/VLTI values
 
-# Check status again to see loaded modules
-cognitive-status
+# Test PLN probabilistic reasoning
+pln-infer "All birds fly"
+# Output: PLN Inference Result with truth values
+
+# Test cognitive pattern transformation
+cognitive-transform "greeting" "hello world"
+# Output: Transform with attention weighting
 
 # Test pattern recognition
 test-pattern hello
@@ -42,10 +49,12 @@ test-attention "longer and more complex input"
 - `ipc-recv <fd>` - Receive data via IPC (stub implementation)
 
 #### Cognitive Grammar Commands (when ENABLE_SCHEME_INTEGRATION=1)
-- `scheme-eval <expression>` - Evaluate Scheme expression (stub implementation)
-- `hypergraph-encode <data>` - Encode data as hypergraph (stub implementation)
-- `pattern-match <pattern> <data>` - Pattern matching (stub implementation)
-- `attention-allocate <resources>` - Allocate attention (stub implementation)
+- `scheme-eval <expression>` - Evaluate Scheme expression (supports +, *, basic expressions)
+- `hypergraph-encode <data>` - Encode data as hypergraph using Scheme-like syntax
+- `pattern-match <pattern> <data>` - Pattern matching with cognitive modules
+- `attention-allocate <resources>` - ECAN-based attention allocation with STI/LTI/VLTI
+- `pln-infer <premises>` - PLN probabilistic logical inference with truth values
+- `cognitive-transform <pattern> <input>` - Apply cognitive pattern transformations
 
 #### Tensor Operations (when ENABLE_TENSOR_OPERATIONS=1)
 - `tensor-create <dims>` - Create tensor (stub implementation)
@@ -56,6 +65,82 @@ test-attention "longer and more complex input"
 - `load-example-modules` - Load example cognitive modules
 - `test-pattern <input>` - Test pattern recognition module
 - `test-attention <input>` - Test attention allocation module
+
+## Cognitive Grammar Kernel
+
+### Hypergraph Encoding
+
+The cognitive kernel provides a Scheme-like hypergraph encoding system for representing knowledge and actions:
+
+```bash
+# Simple encoding
+hypergraph-encode "hello world"
+# Result: (hypergraph (concept "hello") (concept "world") (link sequence (ordered-link "hello" "world") ))
+
+# Complex encoding
+hypergraph-encode "The cat sits on the mat"
+# Result: (hypergraph (concept "The") (concept "cat") ... (link sequence ...))
+```
+
+The hypergraph representation creates:
+- **Concept nodes** for each significant word
+- **Link sequences** showing relationships between concepts
+- **Ordered links** preserving sequential structure
+
+### ECAN Attention Allocation
+
+Economic Cognitive Agent Network (ECAN) attention allocation based on input complexity:
+
+```bash
+attention-allocate "simple input"
+# ECAN Attention Allocated:
+#   Total Attention: 45
+#   Short-term Importance: 60
+#   Long-term Importance: 30
+#   Very Long-term Importance: 6
+#   Stimulation Level: 12
+```
+
+ECAN calculates:
+- **STI (Short-term Importance)**: Immediate relevance
+- **LTI (Long-term Importance)**: Persistent significance  
+- **VLTI (Very Long-term Importance)**: Deep memory relevance
+- **Stimulation Level**: Current activation intensity
+
+### PLN Probabilistic Reasoning
+
+Probabilistic Logic Networks (PLN) for logical inference with uncertainty:
+
+```bash
+pln-infer "All birds fly"
+# PLN Inference Result:
+#   Premises: All birds fly
+#   Conclusion: (conclusion "All birds fly" (tv 65 72))
+#   Truth Value: (65, 72)
+```
+
+PLN provides:
+- **Strength**: Probability measure (0-100)
+- **Confidence**: Certainty in the probability (0-100)
+- **Deduction**: A→B, B→C ⊢ A→C inference
+- **Induction**: Evidence-based generalization
+
+### Cognitive Pattern Transformations
+
+Map shell commands to cognitive pattern transformations:
+
+```bash
+cognitive-transform "greeting" "hello world"
+# Cognitive Transform Result:
+#   Pattern: greeting
+#   Input: hello world
+#   Transform: (transform (pattern "greeting") (input "hello world") (attention 83))
+```
+
+Pattern transformations:
+- Apply cognitive patterns to shell input
+- Weight transformations by attention values
+- Enable context-aware command processing
 
 ## Configuration
 
@@ -156,9 +241,16 @@ Run the cognitive extensions test suite:
 
 ```bash
 ./test-cognitive.sh
+./test-cognitive-kernel.sh  # Enhanced kernel tests
 ```
 
-This tests basic functionality, module loading, pattern recognition, and attention allocation.
+The test suites verify:
+- Basic cognitive functionality and module loading
+- Hypergraph encoding with Scheme-like syntax
+- ECAN attention allocation with STI/LTI/VLTI calculation
+- PLN probabilistic reasoning with truth values
+- Cognitive pattern transformations
+- Integration between cognitive modules
 
 ## Documentation
 
@@ -179,15 +271,21 @@ The current implementation provides:
 - ✅ Basic IPC framework
 - ✅ Example modules
 - ✅ Configuration system
+- ✅ **Hypergraph encoding library (Scheme-like syntax)**
+- ✅ **ECAN attention allocation (STI/LTI/VLTI)**
+- ✅ **PLN probabilistic reasoning (truth values)**
+- ✅ **Cognitive pattern transformations**
+- ✅ **Scheme integration (basic expressions)**
 - ✅ Documentation
 
 Future enhancements can include:
-- Full Scheme interpreter integration
-- Complete ECAN attention allocation
+- Full Scheme interpreter integration (currently basic expressions)
+- Complete ECAN dynamics with spread and decay
+- Advanced PLN inference rules (currently deduction/induction)
 - ggml tensor operations
 - ZeroMQ/gRPC network protocols
 - Distributed agent coordination
 - Advanced pattern recognition
-- Hypergraph knowledge representation
+- Recursive grammar expansion
 
 The architecture is designed to support incremental development of these advanced features while maintaining shell compatibility and performance.

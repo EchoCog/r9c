@@ -129,6 +129,8 @@ extern void b_tensor_create(char **);
 extern void b_tensor_op(char **);
 extern void b_membrane_alloc(char **);
 extern void b_cognitive_status(char **);
+extern void b_pln_infer(char **);
+extern void b_cognitive_transform(char **);
 
 /* Example Cognitive Commands (when ENABLE_COGNITIVE_EXAMPLES is defined) */
 extern void b_load_example_modules(char **);
