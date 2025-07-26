@@ -264,16 +264,42 @@ static scheme_eval_func_t scheme_eval_func = NULL;
 static scheme_call_func_t scheme_call_func = NULL;
 static scheme_cleanup_func_t scheme_cleanup_func = NULL;
 
+/* Hypergraph Node Structure */
+typedef struct HypergraphNode {
+    char *name;
+    float attention_value;
+    int concept_type;  /* 0=concept, 1=link, 2=predicate */
+    struct HypergraphNode **children;
+    int child_count;
+    struct HypergraphNode *next;
+} HypergraphNode;
+
+/* PLN Truth Value */
+typedef struct {
+    float strength;    /* Probability [0,1] */
+    float confidence;  /* Confidence [0,1] */
+} TruthValue;
+
+/* ECAN Attention Allocation */
+typedef struct {
+    float short_term_importance;
+    float long_term_importance;
+    float very_long_term_importance;
+    unsigned int stimulation_level;
+} ECANValues;
+
 /* Hypergraph grammar kernel interface */
 typedef struct {
     const char *name;
     int (*encode)(const char *input, char **output);
     int (*decode)(const char *input, char **output);
     int (*transform)(const char *pattern, const char *input, char **output);
+    int (*pln_infer)(const char *premises, char **conclusion, TruthValue *tv);
 } HypergraphKernel;
 
 static HypergraphKernel *grammar_kernels = NULL;
 static int kernel_count = 0;
+static HypergraphNode *hypergraph_root = NULL;
 
 int register_hypergraph_kernel(HypergraphKernel *kernel) {
     /* Simple array-based registration for now */
@@ -296,6 +322,208 @@ HypergraphKernel *find_hypergraph_kernel(const char *name) {
     }
     return NULL;
 }
+
+/* Core Hypergraph Operations */
+HypergraphNode *create_hypergraph_node(const char *name, int concept_type) {
+    HypergraphNode *node = malloc(sizeof(HypergraphNode));
+    if (!node) return NULL;
+    
+    node->name = ecpy(name);
+    node->attention_value = 0.0f;
+    node->concept_type = concept_type;
+    node->children = NULL;
+    node->child_count = 0;
+    node->next = NULL;
+    
+    return node;
+}
+
+void destroy_hypergraph_node(HypergraphNode *node) {
+    if (!node) return;
+    
+    if (node->name) efree(node->name);
+    if (node->children) {
+        for (int i = 0; i < node->child_count; i++) {
+            destroy_hypergraph_node(node->children[i]);
+        }
+        efree(node->children);
+    }
+    efree(node);
+}
+
+int add_hypergraph_child(HypergraphNode *parent, HypergraphNode *child) {
+    if (!parent || !child) return -1;
+    
+    HypergraphNode **new_children = realloc(parent->children, 
+        (parent->child_count + 1) * sizeof(HypergraphNode*));
+    if (!new_children) return -1;
+    
+    parent->children = new_children;
+    parent->children[parent->child_count++] = child;
+    return 0;
+}
+
+/* ECAN Attention Allocation */
+float calculate_ecan_attention(const char *input, ECANValues *ecan) {
+    if (!input || !ecan) return 0.0f;
+    
+    size_t length = strlen(input);
+    float complexity = (float)length;
+    
+    /* Calculate ECAN values based on input characteristics */
+    ecan->short_term_importance = complexity * 0.1f;
+    ecan->long_term_importance = complexity * 0.05f;
+    ecan->very_long_term_importance = complexity * 0.01f;
+    ecan->stimulation_level = (unsigned int)(complexity * 2);
+    
+    /* Simple attention formula: weighted sum of importance levels */
+    return ecan->short_term_importance * 0.6f + 
+           ecan->long_term_importance * 0.3f + 
+           ecan->very_long_term_importance * 0.1f;
+}
+
+/* PLN Inference */
+TruthValue pln_deduction(TruthValue premise1, TruthValue premise2) {
+    TruthValue result;
+    
+    /* PLN deduction rule: if A->B and B->C then A->C */
+    result.strength = premise1.strength * premise2.strength;
+    result.confidence = premise1.confidence * premise2.confidence;
+    
+    return result;
+}
+
+TruthValue pln_induction(TruthValue evidence, float prior_strength) {
+    TruthValue result;
+    
+    /* PLN induction: generalize from evidence */
+    result.strength = (evidence.strength + prior_strength) / 2.0f;
+    result.confidence = evidence.confidence * 0.8f; /* Lower confidence for induction */
+    
+    return result;
+}
+
+/* Hypergraph Encoding in Scheme-like Syntax */
+int encode_to_hypergraph(const char *input, char **output) {
+    if (!input || !output) return -1;
+    
+    /* Parse input and create hypergraph representation */
+    char *result = malloc(strlen(input) * 4 + 256);
+    if (!result) return -1;
+    
+    /* Create nodes for each significant word */
+    char *words[32];
+    int word_count = 0;
+    char *input_copy = ecpy(input);
+    char *token = strtok(input_copy, " \t\n");
+    
+    while (token && word_count < 32) {
+        words[word_count++] = token;
+        token = strtok(NULL, " \t\n");
+    }
+    
+    /* Generate Scheme-like hypergraph encoding */
+    strcpy(result, "(hypergraph ");
+    for (int i = 0; i < word_count; i++) {
+        strcat(result, "(concept \"");
+        strcat(result, words[i]);
+        strcat(result, "\") ");
+    }
+    
+    /* Add relationship links */
+    if (word_count > 1) {
+        strcat(result, "(link sequence ");
+        for (int i = 0; i < word_count - 1; i++) {
+            strcat(result, "(ordered-link \"");
+            strcat(result, words[i]);
+            strcat(result, "\" \"");
+            strcat(result, words[i + 1]);
+            strcat(result, "\") ");
+        }
+        strcat(result, ")");
+    }
+    strcat(result, ")");
+    
+    efree(input_copy);
+    *output = result;
+    return 0;
+}
+
+/* Default Hypergraph Kernel Implementation */
+static int default_kernel_encode(const char *input, char **output) {
+    return encode_to_hypergraph(input, output);
+}
+
+static int default_kernel_decode(const char *input, char **output) {
+    if (!input || !output) return -1;
+    
+    /* Simple decode: extract concepts from hypergraph notation */
+    char *result = malloc(strlen(input) + 64);
+    if (!result) return -1;
+    
+    strcpy(result, "decoded: ");
+    
+    /* Extract concept names from (concept "name") patterns */
+    const char *pos = input;
+    while ((pos = strstr(pos, "(concept \"")) != NULL) {
+        pos += 10; /* Skip "(concept \"" */
+        const char *end = strstr(pos, "\")");
+        if (end) {
+            strncat(result, pos, end - pos);
+            strcat(result, " ");
+            pos = end + 2;
+        } else {
+            break;
+        }
+    }
+    
+    *output = result;
+    return 0;
+}
+
+static int default_kernel_transform(const char *pattern, const char *input, char **output) {
+    if (!pattern || !input || !output) return -1;
+    
+    /* Apply cognitive pattern transformation */
+    char *result = malloc(strlen(pattern) + strlen(input) + 128);
+    if (!result) return -1;
+    
+    ECANValues ecan;
+    float attention = calculate_ecan_attention(input, &ecan);
+    
+    sprintf(result, "(transform (pattern \"%s\") (input \"%s\") (attention %d))", 
+            pattern, input, (int)(attention * 100));
+    
+    *output = result;
+    return 0;
+}
+
+static int default_kernel_pln_infer(const char *premises, char **conclusion, TruthValue *tv) {
+    if (!premises || !conclusion || !tv) return -1;
+    
+    /* Simple PLN inference example */
+    TruthValue premise_tv = {0.8f, 0.9f}; /* Default premise truth value */
+    TruthValue prior_tv = {0.5f, 0.5f};   /* Default prior */
+    
+    *tv = pln_induction(premise_tv, prior_tv.strength);
+    
+    char *result = malloc(strlen(premises) + 128);
+    if (!result) return -1;
+    
+    sprintf(result, "(conclusion \"%s\" (tv %d %d))", premises, (int)(tv->strength * 100), (int)(tv->confidence * 100));
+    *conclusion = result;
+    
+    return 0;
+}
+
+/* Default kernel definition */
+static HypergraphKernel default_kernel = {
+    .name = "default",
+    .encode = default_kernel_encode,
+    .decode = default_kernel_decode,
+    .transform = default_kernel_transform,
+    .pln_infer = default_kernel_pln_infer
+};
 
 int scheme_init(void) {
     /* Try to load a Scheme interpreter library (optional) */
@@ -363,9 +591,33 @@ char *scheme_call(const char *func, char **args) {
         HypergraphKernel *kernel = find_hypergraph_kernel("default");
         if (kernel && kernel->encode) {
             char *output = NULL;
-            kernel->encode(args[0], &output);
-            return output;
+            int result = kernel->encode(args[0], &output);
+            if (result == 0) return output;
         }
+        /* Fallback encoding */
+        char *result = malloc(strlen(args[0]) + 64);
+        if (result) {
+            sprintf(result, "(hypergraph-node \"%s\")", args[0]);
+        }
+        return result;
+    } else if (strcmp(func, "pln-infer") == 0 && args && args[0]) {
+        HypergraphKernel *kernel = find_hypergraph_kernel("default");
+        if (kernel && kernel->pln_infer) {
+            char *conclusion = NULL;
+            TruthValue tv;
+            int result = kernel->pln_infer(args[0], &conclusion, &tv);
+            if (result == 0) return conclusion;
+        }
+    } else if (strcmp(func, "ecan-allocate") == 0 && args && args[0]) {
+        ECANValues ecan;
+        float attention = calculate_ecan_attention(args[0], &ecan);
+        char *result = malloc(256);
+        if (result) {
+            sprintf(result, "(attention %d (sti %d) (lti %d) (vlti %d))", 
+                    (int)(attention * 100), (int)(ecan.short_term_importance * 100), 
+                    (int)(ecan.long_term_importance * 100), (int)(ecan.very_long_term_importance * 100));
+        }
+        return result;
     }
     
     return ecpy("scheme_call_result");
@@ -647,13 +899,25 @@ void b_hypergraph_encode(char **av) {
         return;
     }
     
-    /* Try to find and use a hypergraph kernel */
+    /* Use the registered hypergraph kernel */
+    HypergraphKernel *kernel = find_hypergraph_kernel("default");
+    if (kernel && kernel->encode) {
+        char *result = NULL;
+        int status = kernel->encode(av[1], &result);
+        if (status == 0 && result) {
+            fprint(1, "Hypergraph encoding: %s\n", result);
+            efree(result);
+            return;
+        }
+    }
+    
+    /* Fallback: use scheme_call */
     char *result = scheme_call("hypergraph-encode", &av[1]);
     if (result) {
         fprint(1, "Hypergraph encoding: %s\n", result);
         efree(result);
     } else {
-        /* Fallback: simple encoding simulation */
+        /* Last fallback: simple encoding simulation */
         fprint(1, "Hypergraph encoded: [%s]\n", av[1]);
     }
 }
@@ -695,15 +959,22 @@ void b_attention_allocate(char **av) {
     }
     
     const char *resources = av[1];
-    float allocation = atof(resources);
+    
+    /* Use ECAN attention allocation */
+    ECANValues ecan;
+    float total_attention = calculate_ecan_attention(resources, &ecan);
     
     AttentionState *state = get_attention_state();
-    state->total_attention = allocation;
-    state->active_patterns++;
+    state->total_attention = total_attention;
+    state->active_patterns = ecan.stimulation_level / 10; /* Rough estimate */
     state->timestamp = time(NULL);
     
-    fprint(1, "Attention allocated: %d units\n", (int)allocation);
-    fprint(1, "Active patterns: %d\n", state->active_patterns);
+    fprint(1, "ECAN Attention Allocated:\n");
+    fprint(1, "  Total Attention: %d\n", (int)(total_attention * 100));
+    fprint(1, "  Short-term Importance: %d\n", (int)(ecan.short_term_importance * 100));
+    fprint(1, "  Long-term Importance: %d\n", (int)(ecan.long_term_importance * 100));
+    fprint(1, "  Very Long-term Importance: %d\n", (int)(ecan.very_long_term_importance * 100));
+    fprint(1, "  Stimulation Level: %d\n", (int)ecan.stimulation_level);
 }
 
 void b_tensor_create(char **av) {
@@ -815,6 +1086,77 @@ void b_cognitive_status(char **av) {
     list_cognitive_modules();
 }
 
+/* PLN Inference Command */
+void b_pln_infer(char **av) {
+    if (!av[1]) {
+        rc_error("pln-infer: missing premises argument");
+        return;
+    }
+    
+    const char *premises = av[1];
+    
+    /* Use PLN inference via hypergraph kernel */
+    HypergraphKernel *kernel = find_hypergraph_kernel("default");
+    if (kernel && kernel->pln_infer) {
+        char *conclusion = NULL;
+        TruthValue tv;
+        int result = kernel->pln_infer(premises, &conclusion, &tv);
+        
+        if (result == 0 && conclusion) {
+            fprint(1, "PLN Inference Result:\n");
+            fprint(1, "  Premises: %s\n", premises);
+            fprint(1, "  Conclusion: %s\n", conclusion);
+            fprint(1, "  Truth Value: (%d, %d)\n", (int)(tv.strength * 100), (int)(tv.confidence * 100));
+            efree(conclusion);
+        } else {
+            fprint(1, "PLN inference failed\n");
+        }
+    } else {
+        /* Fallback: use scheme_call */
+        char *result = scheme_call("pln-infer", &av[1]);
+        if (result) {
+            fprint(1, "PLN inference: %s\n", result);
+            efree(result);
+        } else {
+            fprint(1, "PLN inference not available\n");
+        }
+    }
+}
+
+/* Cognitive Transform Command */
+void b_cognitive_transform(char **av) {
+    if (!av[1] || !av[2]) {
+        rc_error("cognitive-transform: missing pattern or input argument");
+        return;
+    }
+    
+    const char *pattern = av[1];
+    const char *input = av[2];
+    
+    /* Use hypergraph kernel transformation */
+    HypergraphKernel *kernel = find_hypergraph_kernel("default");
+    if (kernel && kernel->transform) {
+        char *output = NULL;
+        int result = kernel->transform(pattern, input, &output);
+        
+        if (result == 0 && output) {
+            fprint(1, "Cognitive Transform Result:\n");
+            fprint(1, "  Pattern: %s\n", pattern);
+            fprint(1, "  Input: %s\n", input);
+            fprint(1, "  Transform: %s\n", output);
+            efree(output);
+        } else {
+            fprint(1, "Cognitive transformation failed\n");
+        }
+    } else {
+        /* Fallback: simple pattern application */
+        ECANValues ecan;
+        float attention = calculate_ecan_attention(input, &ecan);
+        fprint(1, "Applied pattern '%s' to input '%s' with attention %d\n", 
+               pattern, input, (int)(attention * 100));
+    }
+}
+
 /* Placeholder implementations for other commands - REMOVED (implemented above) */
 
 /* Main Initialization */
@@ -829,6 +1171,11 @@ int cognitive_init(void) {
 
 #if ENABLE_SCHEME_INTEGRATION
     if (scheme_init() != 0) {
+        return -1;
+    }
+    
+    /* Register default hypergraph kernel */
+    if (register_hypergraph_kernel(&default_kernel) != 0) {
         return -1;
     }
 #endif

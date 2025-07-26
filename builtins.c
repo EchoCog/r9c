@@ -80,6 +80,8 @@ static struct {
 	{ b_hypergraph_encode,	"hypergraph-encode" },
 	{ b_pattern_match,	"pattern-match" },
 	{ b_attention_allocate,	"attention-allocate" },
+	{ b_pln_infer,		"pln-infer" },
+	{ b_cognitive_transform, "cognitive-transform" },
 #endif
 #if ENABLE_TENSOR_OPERATIONS
 	{ b_tensor_create,	"tensor-create" },
