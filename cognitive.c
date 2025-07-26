@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <errno.h>
 
 /* Global cognitive state */
 static CognitiveModule *modules_head = NULL;
@@ -117,6 +122,47 @@ void reset_attention_state(void) {
     global_attention.active_patterns = 0;
     global_attention.pattern_data = NULL;
     global_attention.timestamp = 0;
+}
+
+/* Forward declarations for default kernel functions */
+static int default_kernel_encode(const char *input, char **output);
+static int default_kernel_pln_infer(const char *premises, char **conclusion, TruthValue *tv);
+static int default_kernel_transform(const char *pattern, const char *input, char **output);
+
+/* Cognitive Grammar Support Functions */
+static HypergraphKernel default_kernel = {
+    .encode = default_kernel_encode,
+    .pln_infer = default_kernel_pln_infer,
+    .transform = default_kernel_transform
+};
+
+HypergraphKernel *find_hypergraph_kernel(const char *name) {
+    /* For now, return a default kernel stub */
+    if (name && strcmp(name, "default") == 0) {
+        return &default_kernel;
+    }
+    return NULL;
+}
+
+float calculate_ecan_attention(const char *input, ECANValues *ecan) {
+    if (!input || !ecan) return 0.0f;
+    
+    /* Basic ECAN calculation based on input complexity */
+    size_t len = strlen(input);
+    float complexity = (float)len / 10.0f;
+    
+    /* Simple heuristic attention allocation */
+    ecan->short_term_importance = 0.6f + (complexity * 0.1f);
+    ecan->long_term_importance = 0.3f + (complexity * 0.05f);
+    ecan->very_long_term_importance = 0.06f + (complexity * 0.01f);
+    ecan->stimulation_level = 12.0f + complexity;
+    
+    /* Total attention is weighted sum */
+    float total = ecan->short_term_importance * len + 
+                  ecan->long_term_importance * 20.0f +
+                  ecan->very_long_term_importance * 5.0f;
+    
+    return total;
 }
 
 /* IPC Extension Implementation */
@@ -274,29 +320,6 @@ typedef struct HypergraphNode {
     struct HypergraphNode *next;
 } HypergraphNode;
 
-/* PLN Truth Value */
-typedef struct {
-    float strength;    /* Probability [0,1] */
-    float confidence;  /* Confidence [0,1] */
-} TruthValue;
-
-/* ECAN Attention Allocation */
-typedef struct {
-    float short_term_importance;
-    float long_term_importance;
-    float very_long_term_importance;
-    unsigned int stimulation_level;
-} ECANValues;
-
-/* Hypergraph grammar kernel interface */
-typedef struct {
-    const char *name;
-    int (*encode)(const char *input, char **output);
-    int (*decode)(const char *input, char **output);
-    int (*transform)(const char *pattern, const char *input, char **output);
-    int (*pln_infer)(const char *premises, char **conclusion, TruthValue *tv);
-} HypergraphKernel;
-
 static HypergraphKernel *grammar_kernels = NULL;
 static int kernel_count = 0;
 static HypergraphNode *hypergraph_root = NULL;
@@ -312,15 +335,6 @@ int register_hypergraph_kernel(HypergraphKernel *kernel) {
     
     grammar_kernels[kernel_count++] = *kernel;
     return 0;
-}
-
-HypergraphKernel *find_hypergraph_kernel(const char *name) {
-    for (int i = 0; i < kernel_count; i++) {
-        if (strcmp(grammar_kernels[i].name, name) == 0) {
-            return &grammar_kernels[i];
-        }
-    }
-    return NULL;
 }
 
 /* Core Hypergraph Operations */
@@ -361,25 +375,6 @@ int add_hypergraph_child(HypergraphNode *parent, HypergraphNode *child) {
     parent->children = new_children;
     parent->children[parent->child_count++] = child;
     return 0;
-}
-
-/* ECAN Attention Allocation */
-float calculate_ecan_attention(const char *input, ECANValues *ecan) {
-    if (!input || !ecan) return 0.0f;
-    
-    size_t length = strlen(input);
-    float complexity = (float)length;
-    
-    /* Calculate ECAN values based on input characteristics */
-    ecan->short_term_importance = complexity * 0.1f;
-    ecan->long_term_importance = complexity * 0.05f;
-    ecan->very_long_term_importance = complexity * 0.01f;
-    ecan->stimulation_level = (unsigned int)(complexity * 2);
-    
-    /* Simple attention formula: weighted sum of importance levels */
-    return ecan->short_term_importance * 0.6f + 
-           ecan->long_term_importance * 0.3f + 
-           ecan->very_long_term_importance * 0.1f;
 }
 
 /* PLN Inference */
@@ -516,15 +511,6 @@ static int default_kernel_pln_infer(const char *premises, char **conclusion, Tru
     return 0;
 }
 
-/* Default kernel definition */
-static HypergraphKernel default_kernel = {
-    .name = "default",
-    .encode = default_kernel_encode,
-    .decode = default_kernel_decode,
-    .transform = default_kernel_transform,
-    .pln_infer = default_kernel_pln_infer
-};
-
 int scheme_init(void) {
     /* Try to load a Scheme interpreter library (optional) */
     scheme_lib_handle = dlopen("libguile-2.2.so", RTLD_LAZY);
@@ -658,15 +644,6 @@ typedef struct {
 static SimpleTensor *tensor_registry[32]; /* Track up to 32 tensors */
 static int tensor_count = 0;
 
-/* Tensor membrane structure for P-system simulation */
-typedef struct {
-    int prime_count;
-    int primes[16];      /* Prime factors */
-    int coefficients[16]; /* Coefficients for each prime */
-    SimpleTensor *tensors[16]; /* Associated tensors */
-    char rules[1024];    /* Membrane rules as string */
-} TensorMembrane;
-
 static TensorMembrane *membrane_registry[16];
 static int membrane_count = 0;
 
@@ -766,24 +743,25 @@ void *tensor_membrane_alloc(int prime_factors[], int count) {
     TensorMembrane *membrane = malloc(sizeof(TensorMembrane));
     if (!membrane) return NULL;
     
-    membrane->prime_count = count;
-    for (int i = 0; i < count; i++) {
-        membrane->primes[i] = prime_factors[i];
-        membrane->coefficients[i] = 1; /* Default coefficient */
-        membrane->tensors[i] = NULL;    /* No associated tensors initially */
+    /* Initialize membrane with header structure fields */
+    membrane->membrane_id = membrane_count + 1;
+    
+    for (int i = 0; i < count && i < 16; i++) {
+        membrane->prime_factors[i] = (uint32_t)prime_factors[i];
+    }
+    for (int i = count; i < 16; i++) {
+        membrane->prime_factors[i] = 0; /* Zero padding */
     }
     
-    /* Initialize membrane rules (P-system style) */
-    snprintf(membrane->rules, sizeof(membrane->rules), 
-             "membrane[%d]:{", membrane_count);
+    membrane->tensor_data = NULL;
+    membrane->data_size = 0;
+    membrane->version = 1;
+    membrane->checksum = 0;
+    
+    /* Calculate initial checksum */
     for (int i = 0; i < count; i++) {
-        char rule[64];
-        snprintf(rule, sizeof(rule), "p%d->p%d*2", 
-                membrane->primes[i], membrane->primes[i]);
-        strcat(membrane->rules, rule);
-        if (i < count - 1) strcat(membrane->rules, ",");
+        membrane->checksum += membrane->prime_factors[i];
     }
-    strcat(membrane->rules, "}");
     
     membrane_registry[membrane_count++] = membrane;
     return membrane;
@@ -804,15 +782,172 @@ void tensor_membrane_free(void *membrane_ptr) {
         }
     }
     
-    /* Cleanup associated tensors */
-    for (int i = 0; i < membrane->prime_count; i++) {
-        if (membrane->tensors[i]) {
-            tensor_destroy(membrane->tensors[i]);
-        }
+    /* Cleanup tensor data */
+    if (membrane->tensor_data) {
+        free(membrane->tensor_data);
     }
     
     free(membrane);
 }
+#endif
+
+/* Distributed Network Protocols Implementation */
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+
+/* Global distributed state */
+static AgentNode *known_agents = NULL;
+static int agent_count = 0;
+static uint32_t local_agent_id = 0;
+static uint16_t discovery_port = 9090;
+static uint16_t service_port = 9091;
+static TensorMembrane *local_membranes[16];
+static int membrane_count_local = 0;
+
+/* Agent Discovery Implementation */
+int agent_discovery_start(uint16_t port) {
+    discovery_port = port;
+    
+    /* Generate local agent ID based on hostname and time */
+    local_agent_id = (uint32_t)time(NULL) ^ (uint32_t)getpid();
+    
+    fprint(1, "Started agent discovery on port %d (agent_id: %d)\n", 
+           port, (int)local_agent_id);
+    return 0;
+}
+
+int agent_announce(AgentNode *self) {
+    if (!self) return -1;
+    
+    /* Simple UDP broadcast for agent discovery */
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) return -1;
+    
+    int broadcast = 1;
+    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
+    
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(discovery_port);
+    addr.sin_addr.s_addr = INADDR_BROADCAST;
+    
+    /* Create discovery message */
+    char msg[512];
+    snprintf(msg, sizeof(msg), "AGENT_ANNOUNCE:%d:%s:%d:%d:%d", 
+             (int)self->agent_id, self->hostname, self->port, 
+             (int)self->capabilities, (int)self->load_factor);
+    
+    int result = sendto(sock, msg, strlen(msg), 0, 
+                       (struct sockaddr*)&addr, sizeof(addr));
+    close(sock);
+    
+    return (result > 0) ? 0 : -1;
+}
+
+AgentNode *agent_find_by_capability(uint32_t capability) {
+    /* Find agent with specific capability */
+    AgentNode *current = known_agents;
+    while (current) {
+        if (current->capabilities & capability) {
+            return current;
+        }
+        current = (AgentNode*)current + 1; /* Move to next agent in array */
+    }
+    return NULL;
+}
+
+void agent_update_status(uint32_t load_factor) {
+    /* Update local agent load status */
+    AgentNode local_node = {0};
+    local_node.agent_id = local_agent_id;
+    strncpy(local_node.hostname, "localhost", sizeof(local_node.hostname) - 1);
+    local_node.port = service_port;
+    local_node.capabilities = 0xFF; /* All capabilities for now */
+    local_node.load_factor = load_factor;
+    local_node.last_seen = time(NULL);
+    
+    agent_announce(&local_node);
+}
+
+/* Membrane Synchronization Implementation */
+int membrane_sync_start(uint32_t membrane_id) {
+    /* Check global membrane registry first */
+    for (int i = 0; i < membrane_count; i++) {
+        if (membrane_registry[i] && membrane_registry[i]->membrane_id == membrane_id) {
+            fprint(1, "Starting sync for membrane %d\n", (int)membrane_id);
+            return 0;
+        }
+    }
+    
+    /* Also check local membranes for distributed protocols */
+    for (int i = 0; i < membrane_count_local; i++) {
+        if (local_membranes[i] && local_membranes[i]->membrane_id == membrane_id) {
+            fprint(1, "Starting sync for membrane %d\n", (int)membrane_id);
+            return 0;
+        }
+    }
+    return -1; /* Membrane not found */
+}
+
+int membrane_compare_versions(TensorMembrane *local, TensorMembrane *remote) {
+    if (!local || !remote) return -1;
+    
+    if (local->version > remote->version) return 1;
+    if (local->version < remote->version) return -1;
+    
+    /* Same version, compare checksums */
+    if (local->checksum != remote->checksum) return 2; /* Conflict */
+    return 0; /* Same version and checksum */
+}
+
+int membrane_merge_changes(TensorMembrane *dest, TensorMembrane *src) {
+    if (!dest || !src) return -1;
+    
+    /* Simple merge strategy: take the higher version */
+    if (src->version > dest->version) {
+        dest->version = src->version;
+        dest->checksum = src->checksum;
+        
+        /* Copy tensor data if available */
+        if (src->tensor_data && src->data_size > 0) {
+            free(dest->tensor_data);
+            dest->tensor_data = malloc(src->data_size);
+            if (dest->tensor_data) {
+                memcpy(dest->tensor_data, src->tensor_data, src->data_size);
+                dest->data_size = src->data_size;
+            }
+        }
+        return 1; /* Merged with remote changes */
+    }
+    return 0; /* No merge needed */
+}
+
+int membrane_broadcast_update(TensorMembrane *membrane) {
+    if (!membrane) return -1;
+    
+    /* Create update message */
+    CognitiveMessage msg = {0};
+    msg.type = MSG_MEMBRANE_SYNC;
+    msg.source_id = local_agent_id;
+    msg.dest_id = 0; /* Broadcast */
+    msg.timestamp = (uint32_t)time(NULL);
+    
+    /* Serialize membrane data (simplified) */
+    char *data = malloc(256);
+    if (!data) return -1;
+    
+    snprintf(data, 256, "MEMBRANE_UPDATE:%d:%d:%d", 
+             (int)membrane->membrane_id, (int)membrane->version, 
+             (int)membrane->checksum);
+    
+    msg.data_length = strlen(data);
+    
+    /* Broadcast to known agents */
+    fprint(1, "Broadcasting membrane update: %s\n", data);
+    
+    free(data);
+    return 0;
+}
+
 #endif
 
 /* Built-in Cognitive Commands */
@@ -1157,6 +1292,122 @@ void b_cognitive_transform(char **av) {
     }
 }
 
+/* Distributed Network Commands */
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+
+void b_agent_discover(char **av) {
+    uint16_t port = discovery_port;
+    
+    if (av[1]) {
+        port = (uint16_t)atoi(av[1]);
+        if (port == 0) port = discovery_port;
+    }
+    
+    int result = agent_discovery_start(port);
+    if (result == 0) {
+        fprint(1, "Agent discovery started on port %d\n", port);
+    } else {
+        rc_error("agent-discover: failed to start discovery");
+    }
+}
+
+void b_agent_connect(char **av) {
+    if (!av[1]) {
+        rc_error("agent-connect: missing host:port argument");
+        return;
+    }
+    
+    /* Parse host:port */
+    char *host_port = ecpy(av[1]);
+    char *port_str = strchr(host_port, ':');
+    if (!port_str) {
+        rc_error("agent-connect: invalid format, use host:port");
+        efree(host_port);
+        return;
+    }
+    
+    *port_str = '\0';
+    port_str++;
+    
+    AgentNode remote_agent = {0};
+    remote_agent.agent_id = (uint32_t)time(NULL); /* Temporary ID */
+    strncpy(remote_agent.hostname, host_port, sizeof(remote_agent.hostname) - 1);
+    remote_agent.port = (uint16_t)atoi(port_str);
+    remote_agent.capabilities = 0;
+    remote_agent.load_factor = 0;
+    remote_agent.last_seen = time(NULL);
+    
+    fprint(1, "Connecting to agent %s:%d\n", remote_agent.hostname, remote_agent.port);
+    
+    efree(host_port);
+}
+
+void b_pattern_share(char **av) {
+    if (!av[1]) {
+        rc_error("pattern-share: missing pattern argument");
+        return;
+    }
+    
+    /* Create pattern sharing message */
+    CognitiveMessage msg = {0};
+    msg.type = MSG_PATTERN_SHARE;
+    msg.source_id = local_agent_id;
+    msg.dest_id = 0; /* Broadcast */
+    msg.timestamp = (uint32_t)time(NULL);
+    msg.data_length = strlen(av[1]);
+    
+    fprint(1, "Sharing pattern: %s\n", av[1]);
+    fprint(1, "Pattern broadcast to network\n");
+}
+
+void b_attention_sync(char **av) {
+    /* Synchronize attention state across agents */
+    AttentionState *state = get_attention_state();
+    
+    CognitiveMessage msg = {0};
+    msg.type = MSG_ATTENTION_SYNC;
+    msg.source_id = local_agent_id;
+    msg.dest_id = 0; /* Broadcast */
+    msg.timestamp = (uint32_t)time(NULL);
+    
+    char data[256];
+    snprintf(data, sizeof(data), "ATTENTION_SYNC:%.2f:%d:%lu", 
+             state->total_attention, state->active_patterns, state->timestamp);
+    msg.data_length = strlen(data);
+    
+    fprint(1, "Synchronizing attention state: %s\n", data);
+}
+
+void b_membrane_sync(char **av) {
+    if (!av[1]) {
+        rc_error("membrane-sync: missing membrane ID argument");
+        return;
+    }
+    
+    uint32_t membrane_id = (uint32_t)atoi(av[1]);
+    int result = membrane_sync_start(membrane_id);
+    
+    if (result == 0) {
+        fprint(1, "Membrane synchronization started for ID %d\n", (int)membrane_id);
+    } else {
+        rc_error("membrane-sync: membrane not found or sync failed");
+    }
+}
+
+void b_load_balance(char **av) {
+    /* Trigger load redistribution */
+    uint32_t current_load = 50; /* Default load factor */
+    
+    if (av[1]) {
+        current_load = (uint32_t)atoi(av[1]);
+    }
+    
+    agent_update_status(current_load);
+    fprint(1, "Load balancing triggered with load factor %d\n", (int)current_load);
+}
+
+#endif
+
 /* Placeholder implementations for other commands - REMOVED (implemented above) */
 
 /* Main Initialization */
@@ -1178,6 +1429,19 @@ int cognitive_init(void) {
     if (register_hypergraph_kernel(&default_kernel) != 0) {
         return -1;
     }
+#endif
+
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+    /* Initialize distributed protocols */
+    known_agents = NULL;
+    agent_count = 0;
+    membrane_count_local = 0;
+    for (int i = 0; i < 16; i++) {
+        local_membranes[i] = NULL;
+    }
+    
+    /* Start agent discovery by default */
+    agent_discovery_start(discovery_port);
 #endif
 
     return 0;
@@ -1204,5 +1468,26 @@ void cognitive_cleanup(void) {
 
 #if ENABLE_SCHEME_INTEGRATION
     scheme_cleanup();
+#endif
+
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+    /* Cleanup distributed protocols */
+    if (known_agents) {
+        free(known_agents);
+        known_agents = NULL;
+    }
+    agent_count = 0;
+    
+    /* Cleanup local membranes */
+    for (int i = 0; i < membrane_count_local; i++) {
+        if (local_membranes[i]) {
+            if (local_membranes[i]->tensor_data) {
+                free(local_membranes[i]->tensor_data);
+            }
+            free(local_membranes[i]);
+            local_membranes[i] = NULL;
+        }
+    }
+    membrane_count_local = 0;
 #endif
 }

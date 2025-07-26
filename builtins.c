@@ -88,6 +88,14 @@ static struct {
 	{ b_tensor_op,		"tensor-op" },
 	{ b_membrane_alloc,	"membrane-alloc" },
 #endif
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+	{ b_agent_discover,	"agent-discover" },
+	{ b_agent_connect,	"agent-connect" },
+	{ b_pattern_share,	"pattern-share" },
+	{ b_attention_sync,	"attention-sync" },
+	{ b_membrane_sync,	"membrane-sync" },
+	{ b_load_balance,	"load-balance" },
+#endif
 #ifdef ADDONS
 	ADDONS
 #endif
