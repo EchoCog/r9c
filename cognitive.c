@@ -1654,6 +1654,15 @@ void b_membrane_sync(char **av) {
     }
     
     uint32_t membrane_id = (uint32_t)atoi(av[1]);
+    
+    /* First check if membrane exists in tensor membrane system */
+    void *membrane = tensor_membrane_find_by_id_prime(membrane_id);
+    if (membrane) {
+        fprint(1, "Membrane synchronization started for ID %d\n", (int)membrane_id);
+        return;
+    }
+    
+    /* Fallback to distributed protocols membrane registry */
     int result = membrane_sync_start(membrane_id);
     
     if (result == 0) {

@@ -25,7 +25,7 @@ attention-sync
 
 # Test membrane synchronization
 echo 'Testing membrane synchronization:'
-membrane-alloc 2 3 5 7
+membrane-alloc 2,3,5,7
 membrane-sync 1
 
 # Test load balancing

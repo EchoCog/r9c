@@ -27,7 +27,7 @@ pattern-share 'distributed attention allocation pattern'
 attention-sync
 
 # Test membrane operations with distributed sync
-membrane-alloc 2 3 5 7 11
+membrane-alloc 2,3,5,7,11
 membrane-sync 1
 
 # Test load balancing
