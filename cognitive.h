@@ -200,6 +200,19 @@ extern void b_cognitive_status(char **);
 extern void b_pln_infer(char **);
 extern void b_cognitive_transform(char **);
 
+/* Enhanced Tensor Membrane Commands */
+extern void b_membrane_create(char **);
+extern void b_membrane_list(char **);
+extern void b_membrane_info(char **);
+extern void b_membrane_destroy(char **);
+extern void b_membrane_set(char **);
+extern void b_membrane_get(char **);
+extern void b_membrane_fill(char **);
+extern void b_membrane_add_object(char **);
+extern void b_membrane_remove_object(char **);
+extern void b_membrane_transfer(char **);
+extern void b_membrane_reshape(char **);
+
 /* Distributed Network Commands */
 #if ENABLE_DISTRIBUTED_PROTOCOLS
 extern void b_agent_discover(char **);
