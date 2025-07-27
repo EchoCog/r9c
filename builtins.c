@@ -87,6 +87,17 @@ static struct {
 	{ b_tensor_create,	"tensor-create" },
 	{ b_tensor_op,		"tensor-op" },
 	{ b_membrane_alloc,	"membrane-alloc" },
+	{ b_membrane_create,	"membrane-create" },
+	{ b_membrane_list,	"membrane-list" },
+	{ b_membrane_info,	"membrane-info" },
+	{ b_membrane_destroy,	"membrane-destroy" },
+	{ b_membrane_set,	"membrane-set" },
+	{ b_membrane_get,	"membrane-get" },
+	{ b_membrane_fill,	"membrane-fill" },
+	{ b_membrane_add_object, "membrane-add-object" },
+	{ b_membrane_remove_object, "membrane-remove-object" },
+	{ b_membrane_transfer,	"membrane-transfer" },
+	{ b_membrane_reshape,	"membrane-reshape" },
 #endif
 #if ENABLE_DISTRIBUTED_PROTOCOLS
 	{ b_agent_discover,	"agent-discover" },

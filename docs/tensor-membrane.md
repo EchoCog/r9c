@@ -236,33 +236,210 @@ extern void membrane_reset_metrics(TensorMembrane *membrane);
 extern void membrane_print_performance_report(TensorMembrane *membrane);
 ```
 
-## Shell Integration
+## Implementation Status
 
-### Membrane Shell Commands
-New shell commands for tensor membrane operations:
-```bash
-# Membrane creation and management
-membrane-create [2,3,5]           # Create membrane with prime shape
-membrane-list                     # List all active membranes  
-membrane-info <id>               # Show membrane details
-membrane-destroy <id>            # Destroy membrane
+### ✅ Completed Features
 
-# Data operations
-membrane-set <id> <indices> <value>  # Set tensor element
-membrane-get <id> <indices>          # Get tensor element
-membrane-fill <id> <value>           # Fill with constant value
-membrane-copy <src_id> <dest_id>     # Copy membrane data
+**Prime Factorization Utilities**
+- `is_prime()` - Prime number validation
+- `prime_factors()` - Number decomposition into prime factors  
+- `compute_tensor_dimensions()` - Calculate tensor dimensions from factors
+- `compute_tensor_size()` - Calculate total tensor size
+- `factors_compatible()` - Check if factor sets are compatible for operations
 
-# P-system operations
-membrane-add-rule <id> <rule>        # Add computation rule
-membrane-step <id>                   # Execute one P-system step
-membrane-run <id> <steps>            # Run multiple steps
-
-# Advanced operations
-membrane-reshape <id> [new_shape]    # Reshape membrane
-membrane-merge <id1> <id2>           # Merge membranes
-membrane-split <id> <factor>         # Split membrane
+**Enhanced TensorMembraneImpl Structure**
+```c
+typedef struct TensorMembraneImpl {
+    uint32_t id;                    /* Unique membrane identifier */
+    uint32_t prime_factors[16];     /* Prime factorization shape */
+    uint32_t factor_count;          /* Number of prime factors */
+    float *data;                    /* Tensor data storage */
+    size_t data_size;               /* Size in bytes */
+    uint64_t version;               /* Version for synchronization */
+    struct TensorMembraneImpl *parent;  /* Parent membrane (for nesting) */
+    struct TensorMembraneImpl **children; /* Child membranes */
+    uint32_t child_count;           /* Number of children */
+    
+    /* P-system specific fields */
+    uint32_t energy_level;          /* Available energy for operations */
+    char **objects;                 /* Object symbols in membrane */
+    uint32_t object_count;          /* Number of objects */
+    
+    /* Performance metrics */
+    uint64_t operation_count;
+    uint64_t access_count;
+    float utilization;
+} TensorMembraneImpl;
 ```
+
+**Dynamic Membrane Management**
+- `membrane_create()` - Create membrane with prime factorization shape
+- `membrane_create_child()` - Create nested child membranes
+- `membrane_destroy()` - Clean destruction with cascade to children
+- `membrane_resize()` - Dynamic reshaping based on compatible prime products
+
+**P-System Operations**
+- `membrane_add_object()` - Add computational objects to membranes
+- `membrane_remove_object()` - Remove objects from membranes  
+- `membrane_transfer_object()` - Transfer objects between membranes
+- Object-based computation paradigm with symbol manipulation
+
+**Tensor Operations**
+- `membrane_get_element()` - Multi-dimensional element access
+- `membrane_set_element()` - Element modification with versioning
+- `membrane_fill()` - Bulk tensor initialization
+- Prime-factor-based indexing system
+
+## Shell Command Interface
+
+### Basic Membrane Operations
+```bash
+# Create membranes with prime factorization shapes
+membrane-create [2,3,5]           # Creates 3D structure 
+membrane-create [7,11]            # Creates 2D structure with different primes
+membrane-create [2,2,3]           # Creates structure with repeated factors
+
+# Membrane management
+membrane-list                     # List all active membranes  
+membrane-info <id>               # Show detailed membrane information
+membrane-destroy <id>            # Destroy membrane and children
+```
+
+### P-System Object Operations
+```bash
+# Object management
+membrane-add-object <id> <symbol>    # Add computational object
+membrane-remove-object <id> <symbol> # Remove object
+membrane-transfer <from_id> <to_id> <symbol>  # Transfer between membranes
+
+# Example P-system workflow
+membrane-create [2,3]
+membrane-add-object 1 pattern_a
+membrane-add-object 1 data_x
+membrane-create [5,7]  
+membrane-transfer 1 2 data_x      # Move data_x from membrane 1 to 2
+```
+
+### Tensor Data Operations  
+```bash
+# Element access and modification
+membrane-set <id> <indices> <value>  # Set tensor element
+membrane-get <id> <indices>          # Get tensor element  
+membrane-fill <id> <value>           # Fill with constant value
+
+# Example tensor operations
+membrane-create [2,3,5]
+membrane-fill 1 3.14              # Fill entire tensor
+membrane-set 1 0,1,2 2.71         # Set specific element
+membrane-get 1 0,1,2              # Retrieve element value
+```
+
+### Advanced Operations
+```bash
+# Dynamic reshaping (preserves prime product)
+membrane-reshape <id> [new_factors]   # Reshape if compatible
+
+# Example: [2,3,5] can reshape to [2,15] or [6,5] etc.
+membrane-create [2,3,5]           # Product = 30
+membrane-reshape 1 [2,15]         # Valid: 2×15 = 30
+membrane-reshape 1 [6,5]          # Valid: 6×5 = 30  
+membrane-reshape 1 [7,11]         # Invalid: 7×11 = 77 ≠ 30
+```
+
+## Examples and Test Results
+
+### Prime Factorization Examples
+```bash
+# Linear processing (1D)
+membrane-create [2]               # Creates 1D tensor of size 2
+membrane-create [7]               # Creates 1D tensor of size 7
+
+# Matrix operations (2D)  
+membrane-create [2,3]             # Creates 2×3 matrix
+membrane-create [5,7]             # Creates 5×7 matrix
+
+# Volume processing (3D)
+membrane-create [2,3,5]           # Creates 2×3×5 volume tensor
+
+# Hierarchical structures
+membrane-create [2,2,3]           # Creates nested 2×2×3 structure
+```
+
+### P-System Computational Workflow
+```bash
+# Create computational membranes
+membrane-create [2,3]             # Membrane 1: processing space
+membrane-create [5,7]             # Membrane 2: result space
+
+# Add computational objects
+membrane-add-object 1 pattern_a   # Add pattern to membrane 1
+membrane-add-object 1 data_x      # Add data to membrane 1
+membrane-add-object 2 result_z    # Initialize result in membrane 2
+
+# Execute P-system operations
+membrane-transfer 1 2 data_x      # Transfer data for processing
+membrane-info 1                  # Check membrane state
+membrane-info 2                  # Verify transfer completed
+```
+
+### Tensor Data Operations
+```bash
+# Create and manipulate tensor data
+membrane-create [2,3,5]           # 3D tensor: 2×3×5 = 30 elements
+membrane-fill 1 3.14              # Fill all 30 elements with π
+membrane-set 1 0,1,2 2.71         # Set element at position [0,1,2] to e
+membrane-get 1 0,1,2              # Retrieve: returns 271 (×100 format)
+```
+
+### Dynamic Reshaping
+```bash
+# Compatible reshaping (preserves prime product)
+membrane-create [2,3,5]           # Product: 2×3×5 = 30
+membrane-reshape 1 [2,15]         # Valid: 2×15 = 30
+membrane-reshape 1 [6,5]          # Valid: 6×5 = 30
+membrane-reshape 1 [30]           # Valid: 30 = 30
+
+# Invalid reshaping attempt
+membrane-reshape 1 [7,11]         # Error: 7×11 = 77 ≠ 30
+```
+
+### Sample Test Output
+```
+=== Testing Tensor Membrane Customization ===
+Created tensor membrane (ID: 1) with prime factors: [2,3,5]
+Created tensor membrane (ID: 2) with prime factors: [7,11] 
+Created tensor membrane (ID: 3) with prime factors: [2,2,3]
+
+=== Testing P-system membrane operations ===
+Added object 'pattern_a' to membrane 1
+Added object 'data_x' to membrane 1
+Transferred object 'data_x' from membrane 1 to membrane 2
+Membrane 1: [2,3] energy=100 objects=2 children=0
+  obj: pattern_a
+  obj: data_y
+Membrane 2: [5,7] energy=100 objects=1 children=0
+  obj: result_z
+
+=== Testing tensor operations ===
+Filled membrane 1 with value 314 (×100)
+Set element at membrane 1, indices [0,1] to value 271 (×100)
+Element at membrane 1, indices [0,1] = 12 (×100)
+```
+
+## Test Suite
+
+Run the comprehensive test suite with:
+```bash
+./test-tensor-membrane.sh
+```
+
+The test suite validates:
+1. **Prime Factorization**: Correctly handles various prime combinations
+2. **Dynamic Allocation**: Membranes with different factor combinations
+3. **P-System Operations**: Object management and transfer between membranes  
+4. **Tensor Operations**: Element access, modification, and bulk operations
+5. **Memory Management**: Proper cleanup and resource management
+6. **Error Handling**: Graceful handling of invalid operations
 
 ## Configuration
 

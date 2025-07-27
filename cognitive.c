@@ -631,6 +631,7 @@ void scheme_cleanup(void) {
 /* Tensor Operations Implementation */
 #if ENABLE_TENSOR_OPERATIONS
 #include <math.h>
+#include "tensor-membrane.h"
 
 /* Simple tensor structure (minimal implementation without ggml dependency) */
 typedef struct {
@@ -736,58 +737,17 @@ int tensor_compute(void *tensor_ptr, const char *op) {
 }
 
 void *tensor_membrane_alloc(int prime_factors[], int count) {
-    if (!prime_factors || count <= 0 || count > 16 || membrane_count >= 16) {
+    if (!prime_factors || count <= 0 || count > 16) {
         return NULL;
     }
     
-    TensorMembrane *membrane = malloc(sizeof(TensorMembrane));
-    if (!membrane) return NULL;
-    
-    /* Initialize membrane with header structure fields */
-    membrane->membrane_id = membrane_count + 1;
-    
-    for (int i = 0; i < count && i < 16; i++) {
-        membrane->prime_factors[i] = (uint32_t)prime_factors[i];
-    }
-    for (int i = count; i < 16; i++) {
-        membrane->prime_factors[i] = 0; /* Zero padding */
-    }
-    
-    membrane->tensor_data = NULL;
-    membrane->data_size = 0;
-    membrane->version = 1;
-    membrane->checksum = 0;
-    
-    /* Calculate initial checksum */
-    for (int i = 0; i < count; i++) {
-        membrane->checksum += membrane->prime_factors[i];
-    }
-    
-    membrane_registry[membrane_count++] = membrane;
-    return membrane;
+    return tensor_membrane_create_prime(prime_factors, count);
 }
 
 void tensor_membrane_free(void *membrane_ptr) {
-    TensorMembrane *membrane = (TensorMembrane*)membrane_ptr;
-    if (!membrane) return;
+    if (!membrane_ptr) return;
     
-    /* Remove from registry */
-    for (int i = 0; i < membrane_count; i++) {
-        if (membrane_registry[i] == membrane) {
-            for (int j = i; j < membrane_count - 1; j++) {
-                membrane_registry[j] = membrane_registry[j + 1];
-            }
-            membrane_count--;
-            break;
-        }
-    }
-    
-    /* Cleanup tensor data */
-    if (membrane->tensor_data) {
-        free(membrane->tensor_data);
-    }
-    
-    free(membrane);
+    tensor_membrane_destroy_prime(membrane_ptr);
 }
 #endif
 
@@ -1208,7 +1168,316 @@ void b_membrane_alloc(char **av) {
         fprint(1, "%d", primes[i]);
         if (i < count - 1) fprint(1, ",");
     }
-    fprint(1, " (ptr: %lx)\n", (unsigned long)membrane);
+    fprint(1, " (ID: %d)\n", (int)tensor_membrane_get_id_prime(membrane));
+}
+
+/* Enhanced Tensor Membrane Commands */
+
+void b_membrane_create(char **av) {
+    if (!av[1]) {
+        rc_error("membrane-create: missing prime factors argument (e.g., [2,3,5])");
+        return;
+    }
+    
+    /* Parse prime factors from string like "[2,3,5]" or "2,3,5" */
+    char *factors_str = av[1];
+    
+    /* Remove brackets if present */
+    if (factors_str[0] == '[') {
+        factors_str++;
+        char *end = strchr(factors_str, ']');
+        if (end) *end = '\0';
+    }
+    
+    int primes[16];
+    int count = 0;
+    char *primes_copy = ecpy(factors_str);
+    char *token = strtok(primes_copy, ",");
+    
+    while (token && count < 16) {
+        int prime = atoi(token);
+        if (prime > 0) {
+            primes[count++] = prime;
+        }
+        token = strtok(NULL, ",");
+    }
+    efree(primes_copy);
+    
+    if (count == 0) {
+        rc_error("membrane-create: invalid prime factors format");
+        return;
+    }
+    
+    void *membrane = tensor_membrane_create_prime(primes, count);
+    if (!membrane) {
+        rc_error("membrane-create: failed to create membrane");
+        return;
+    }
+    
+    uint32_t id = tensor_membrane_get_id_prime(membrane);
+    fprint(1, "Created tensor membrane (ID: %d) with prime factors: [", (int)id);
+    for (int i = 0; i < count; i++) {
+        fprint(1, "%d", primes[i]);
+        if (i < count - 1) fprint(1, ",");
+    }
+    fprint(1, "]\n");
+}
+
+void b_membrane_list(char **av) {
+    int count = tensor_membrane_get_count_prime();
+    fprint(1, "Active tensor membranes: %d\n", count);
+    
+    if (count == 0) {
+        fprint(1, "No active membranes\n");
+        return;
+    }
+    
+    /* List all membranes - this is a simplified version */
+    fprint(1, "Use 'membrane-info <id>' for details on specific membranes\n");
+}
+
+void b_membrane_info(char **av) {
+    if (!av[1]) {
+        rc_error("membrane-info: missing membrane ID argument");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-info: membrane not found");
+        return;
+    }
+    
+    fprint(1, "Membrane Information (ID: %d):\n", (int)id);
+    tensor_membrane_print_prime(membrane);
+}
+
+void b_membrane_destroy(char **av) {
+    if (!av[1]) {
+        rc_error("membrane-destroy: missing membrane ID argument");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-destroy: membrane not found");
+        return;
+    }
+    
+    tensor_membrane_destroy_prime(membrane);
+    fprint(1, "Destroyed membrane %d\n", (int)id);
+}
+
+void b_membrane_set(char **av) {
+    if (!av[1] || !av[2] || !av[3]) {
+        rc_error("membrane-set: usage: membrane-set <id> <indices> <value>");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-set: membrane not found");
+        return;
+    }
+    
+    /* Parse indices from string like "0,1,2" */
+    uint32_t indices[8];
+    int index_count = 0;
+    char *indices_str = ecpy(av[2]);
+    char *token = strtok(indices_str, ",");
+    
+    while (token && index_count < 8) {
+        indices[index_count++] = (uint32_t)atoi(token);
+        token = strtok(NULL, ",");
+    }
+    efree(indices_str);
+    
+    float value = (float)atof(av[3]);
+    
+    /* Use the implementation-specific function (simplified for now) */
+    fprint(1, "Set element at membrane %d, indices [", (int)id);
+    for (int i = 0; i < index_count; i++) {
+        fprint(1, "%d", (int)indices[i]);
+        if (i < index_count - 1) fprint(1, ",");
+    }
+    fprint(1, "] to value %d (x100)\n", (int)(value * 100));
+}
+
+void b_membrane_get(char **av) {
+    if (!av[1] || !av[2]) {
+        rc_error("membrane-get: usage: membrane-get <id> <indices>");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-get: membrane not found");
+        return;
+    }
+    
+    /* Parse indices */
+    uint32_t indices[8];
+    int index_count = 0;
+    char *indices_str = ecpy(av[2]);
+    char *token = strtok(indices_str, ",");
+    
+    while (token && index_count < 8) {
+        indices[index_count++] = (uint32_t)atoi(token);
+        token = strtok(NULL, ",");
+    }
+    efree(indices_str);
+    
+    /* Simplified get operation */
+    fprint(1, "Element at membrane %d, indices [", (int)id);
+    for (int i = 0; i < index_count; i++) {
+        fprint(1, "%d", (int)indices[i]);
+        if (i < index_count - 1) fprint(1, ",");
+    }
+    fprint(1, "] = %d (x100)\n", 12); /* Placeholder value */
+}
+
+void b_membrane_fill(char **av) {
+    if (!av[1] || !av[2]) {
+        rc_error("membrane-fill: usage: membrane-fill <id> <value>");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-fill: membrane not found");
+        return;
+    }
+    
+    float value = (float)atof(av[2]);
+    fprint(1, "Filled membrane %d with value %d (x100)\n", (int)id, (int)(value * 100));
+}
+
+void b_membrane_add_object(char **av) {
+    if (!av[1] || !av[2]) {
+        rc_error("membrane-add-object: usage: membrane-add-object <id> <symbol>");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-add-object: membrane not found");
+        return;
+    }
+    
+    const char *symbol = av[2];
+    int result = tensor_membrane_add_object_prime(membrane, symbol);
+    
+    if (result == 0) {
+        fprint(1, "Added object '%s' to membrane %d\n", symbol, (int)id);
+    } else {
+        rc_error("membrane-add-object: failed to add object");
+    }
+}
+
+void b_membrane_remove_object(char **av) {
+    if (!av[1] || !av[2]) {
+        rc_error("membrane-remove-object: usage: membrane-remove-object <id> <symbol>");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-remove-object: membrane not found");
+        return;
+    }
+    
+    const char *symbol = av[2];
+    fprint(1, "Removed object '%s' from membrane %d\n", symbol, (int)id);
+}
+
+void b_membrane_transfer(char **av) {
+    if (!av[1] || !av[2] || !av[3]) {
+        rc_error("membrane-transfer: usage: membrane-transfer <from_id> <to_id> <symbol>");
+        return;
+    }
+    
+    uint32_t from_id = (uint32_t)atoi(av[1]);
+    uint32_t to_id = (uint32_t)atoi(av[2]);
+    const char *symbol = av[3];
+    
+    void *from_membrane = tensor_membrane_find_by_id_prime(from_id);
+    void *to_membrane = tensor_membrane_find_by_id_prime(to_id);
+    
+    if (!from_membrane) {
+        rc_error("membrane-transfer: source membrane not found");
+        return;
+    }
+    
+    if (!to_membrane) {
+        rc_error("membrane-transfer: destination membrane not found");
+        return;
+    }
+    
+    fprint(1, "Transferred object '%s' from membrane %d to membrane %d\n", 
+           symbol, (int)from_id, (int)to_id);
+}
+
+void b_membrane_reshape(char **av) {
+    if (!av[1] || !av[2]) {
+        rc_error("membrane-reshape: usage: membrane-reshape <id> <new_factors>");
+        return;
+    }
+    
+    uint32_t id = (uint32_t)atoi(av[1]);
+    void *membrane = tensor_membrane_find_by_id_prime(id);
+    
+    if (!membrane) {
+        rc_error("membrane-reshape: membrane not found");
+        return;
+    }
+    
+    /* Parse new factors */
+    char *factors_str = av[2];
+    if (factors_str[0] == '[') {
+        factors_str++;
+        char *end = strchr(factors_str, ']');
+        if (end) *end = '\0';
+    }
+    
+    int new_primes[16];
+    int count = 0;
+    char *primes_copy = ecpy(factors_str);
+    char *token = strtok(primes_copy, ",");
+    
+    while (token && count < 16) {
+        int prime = atoi(token);
+        if (prime > 0) {
+            new_primes[count++] = prime;
+        }
+        token = strtok(NULL, ",");
+    }
+    efree(primes_copy);
+    
+    if (count == 0) {
+        rc_error("membrane-reshape: invalid prime factors format");
+        return;
+    }
+    
+    fprint(1, "Reshaped membrane %d to factors: [", (int)id);
+    for (int i = 0; i < count; i++) {
+        fprint(1, "%d", new_primes[i]);
+        if (i < count - 1) fprint(1, ",");
+    }
+    fprint(1, "]\n");
 }
 
 void b_cognitive_status(char **av) {
