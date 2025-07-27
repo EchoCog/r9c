@@ -5,6 +5,9 @@
 #ifndef COGNITIVE_H
 #define COGNITIVE_H
 
+#include <stdint.h>
+#include <time.h>
+
 /* Don't re-include rc.h as it should already be included by the caller */
 
 /* Configuration flags for cognitive features */
@@ -24,9 +27,74 @@
 #define ENABLE_TENSOR_OPERATIONS 0
 #endif
 
+#ifndef ENABLE_DISTRIBUTED_PROTOCOLS
+#define ENABLE_DISTRIBUTED_PROTOCOLS 0
+#endif
+
 /* Forward declarations */
 typedef struct CognitiveModule CognitiveModule;
 typedef struct AttentionState AttentionState;
+
+/* Cognitive Grammar Types */
+typedef struct {
+    float strength;
+    float confidence;
+} TruthValue;
+
+typedef struct {
+    float short_term_importance;
+    float long_term_importance; 
+    float very_long_term_importance;
+    float stimulation_level;
+} ECANValues;
+
+typedef struct {
+    int (*encode)(const char *input, char **output);
+    int (*pln_infer)(const char *premises, char **conclusion, TruthValue *tv);
+    int (*transform)(const char *pattern, const char *input, char **output);
+} HypergraphKernel;
+
+/* Distributed Network Types */
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+typedef enum {
+    MSG_DISCOVERY,
+    MSG_HEARTBEAT,
+    MSG_ATTENTION_SYNC,
+    MSG_PATTERN_SHARE,
+    MSG_COGNITIVE_STATE,
+    MSG_COMMAND_REQUEST,
+    MSG_MEMORY_SYNC,
+    MSG_INFERENCE_QUERY,
+    MSG_MEMBRANE_SYNC
+} MessageType;
+
+typedef struct {
+    MessageType type;
+    uint32_t source_id;
+    uint32_t dest_id;
+    uint32_t timestamp;
+    uint32_t data_length;
+    char data[];
+} CognitiveMessage;
+
+typedef struct {
+    uint32_t agent_id;
+    char hostname[256];
+    uint16_t port;
+    uint32_t capabilities;
+    uint32_t load_factor;
+    time_t last_seen;
+} AgentNode;
+
+typedef struct {
+    uint32_t membrane_id;
+    uint32_t prime_factors[16];
+    float *tensor_data;
+    size_t data_size;
+    uint64_t version;
+    uint32_t checksum;
+} TensorMembrane;
+#endif
 
 /* IPC Extension Interface */
 #if ENABLE_IPC_EXTENSIONS
@@ -132,10 +200,36 @@ extern void b_cognitive_status(char **);
 extern void b_pln_infer(char **);
 extern void b_cognitive_transform(char **);
 
+/* Distributed Network Commands */
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+extern void b_agent_discover(char **);
+extern void b_agent_connect(char **);
+extern void b_pattern_share(char **);
+extern void b_attention_sync(char **);
+extern void b_membrane_sync(char **);
+extern void b_load_balance(char **);
+#endif
+
 /* Example Cognitive Commands (when ENABLE_COGNITIVE_EXAMPLES is defined) */
 extern void b_load_example_modules(char **);
 extern void b_test_pattern(char **);
 extern void b_test_attention(char **);
+
+/* Cognitive Grammar Support Functions */
+extern HypergraphKernel *find_hypergraph_kernel(const char *name);
+extern float calculate_ecan_attention(const char *input, ECANValues *ecan);
+
+/* Distributed Network Functions */
+#if ENABLE_DISTRIBUTED_PROTOCOLS
+extern int agent_discovery_start(uint16_t port);
+extern int agent_announce(AgentNode *self);
+extern AgentNode *agent_find_by_capability(uint32_t capability);
+extern void agent_update_status(uint32_t load_factor);
+extern int membrane_sync_start(uint32_t membrane_id);
+extern int membrane_compare_versions(TensorMembrane *local, TensorMembrane *remote);
+extern int membrane_merge_changes(TensorMembrane *dest, TensorMembrane *src);
+extern int membrane_broadcast_update(TensorMembrane *membrane);
+#endif
 
 /* Initialization and Cleanup */
 extern int cognitive_init(void);
