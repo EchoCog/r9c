@@ -125,6 +125,87 @@ membrane-reshape 1 [6,5]      # Valid: 6×5 = 30
 
 ## Cognitive Grammar Kernel
 
+```mermaid
+graph TD
+    subgraph "Cognitive Processing Pipeline"
+        INPUT[User Input<br/>"hello world"]
+        
+        subgraph "Hypergraph Encoding"
+            PARSE[Parse Input]
+            CONCEPTS[Extract Concepts<br/>concept("hello")<br/>concept("world")]
+            LINKS[Create Links<br/>ordered-link("hello", "world")]
+            HYPERGRAPH[Assemble Hypergraph<br/>(hypergraph ...)]
+        end
+        
+        subgraph "ECAN Attention"
+            COMPLEXITY[Analyze Complexity]
+            STI[Short-term Importance<br/>STI = 60]
+            LTI[Long-term Importance<br/>LTI = 30]
+            VLTI[Very Long-term Importance<br/>VLTI = 6]
+            STIMULATION[Stimulation Level<br/>Level = 12]
+        end
+        
+        subgraph "PLN Reasoning"
+            INFERENCE[Probabilistic Inference]
+            TRUTH[Truth Values<br/>Strength & Confidence]
+            DEDUCTION[Deduction Rules]
+            INDUCTION[Induction Rules]
+        end
+        
+        subgraph "Pattern Transformation"
+            TRANSFORM[Pattern Transform]
+            WEIGHT[Attention Weighting]
+            COGNITIVE[Cognitive Pattern<br/>Output]
+        end
+        
+        subgraph "Memory Systems"
+            STM[Short-term Memory]
+            LTM[Long-term Memory]
+            WM[Working Memory]
+        end
+    end
+    
+    INPUT --> PARSE
+    PARSE --> CONCEPTS
+    CONCEPTS --> LINKS
+    LINKS --> HYPERGRAPH
+    
+    HYPERGRAPH --> COMPLEXITY
+    COMPLEXITY --> STI
+    COMPLEXITY --> LTI
+    COMPLEXITY --> VLTI
+    COMPLEXITY --> STIMULATION
+    
+    STI --> INFERENCE
+    LTI --> INFERENCE
+    INFERENCE --> TRUTH
+    TRUTH --> DEDUCTION
+    TRUTH --> INDUCTION
+    
+    DEDUCTION --> TRANSFORM
+    INDUCTION --> TRANSFORM
+    TRANSFORM --> WEIGHT
+    WEIGHT --> COGNITIVE
+    
+    STI --> STM
+    LTI --> LTM
+    STIMULATION --> WM
+    
+    classDef input fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef hypergraph fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef attention fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef reasoning fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef transform fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef memory fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    
+    class INPUT input
+    class PARSE,CONCEPTS,LINKS,HYPERGRAPH hypergraph
+    class COMPLEXITY,STI,LTI,VLTI,STIMULATION attention
+    class INFERENCE,TRUTH,DEDUCTION,INDUCTION reasoning
+    class TRANSFORM,WEIGHT,COGNITIVE transform
+    class STM,LTM,WM memory
+```
+
 ### Hypergraph Encoding
 
 The cognitive kernel provides a Scheme-like hypergraph encoding system for representing knowledge and actions:

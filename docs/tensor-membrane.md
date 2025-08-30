@@ -14,17 +14,72 @@ Tensor membranes serve as computational boundaries that:
 - Enable dynamic resource allocation and attention management
 
 ### Prime Factorization Geometry
-Membrane shapes are defined by prime factorization to create hierarchical, composable structures:
-```
-Prime: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37...
 
-Membrane Shapes:
-- [2] → Linear processing (1D)
-- [2,3] → Matrix operations (2D) 
-- [2,3,5] → Volume processing (3D)
-- [2,2,3] → Hierarchical matrix (nested 2D)
-- [7,11] → High-dimensional sparse patterns
+```mermaid
+graph TD
+    subgraph "Prime Factorization Examples"
+        subgraph "1D: [2]"
+            P2[2] --> L1[Linear Array<br/>Size: 2]
+        end
+        
+        subgraph "2D: [2,3]"
+            P2_2[2] --> M1[Matrix<br/>2×3]
+            P3[3] --> M1
+        end
+        
+        subgraph "3D: [2,3,5]"
+            P2_3[2] --> V1[Volume<br/>2×3×5]
+            P3_2[3] --> V1
+            P5[5] --> V1
+        end
+        
+        subgraph "Hierarchical: [2,2,3]"
+            P2_H1[2] --> H1[Nested Structure]
+            P2_H2[2] --> H1
+            P3_H[3] --> H1
+            H1 --> H1_DESC[2×(2×3) matrices]
+        end
+        
+        subgraph "High-Dim: [7,11]"
+            P7[7] --> HD[Sparse Tensor<br/>7×11]
+            P11[11] --> HD
+        end
+    end
+    
+    subgraph "Tensor Operations"
+        OPS[Tensor Operations]
+        ADD[Addition]
+        MUL[Multiplication] 
+        CONV[Convolution]
+        RESHAPE[Reshape]
+        
+        OPS --> ADD
+        OPS --> MUL
+        OPS --> CONV
+        OPS --> RESHAPE
+    end
+    
+    L1 --> OPS
+    M1 --> OPS
+    V1 --> OPS
+    H1 --> OPS
+    HD --> OPS
+    
+    classDef prime fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef tensor fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef ops fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    
+    class P2,P3,P2_2,P2_3,P3_2,P5,P2_H1,P2_H2,P3_H,P7,P11 prime
+    class L1,M1,V1,H1,H1_DESC,HD tensor
+    class OPS,ADD,MUL,CONV,RESHAPE ops
 ```
+
+**Membrane Shapes:**
+- **[2]** → Linear processing (1D)
+- **[2,3]** → Matrix operations (2D) 
+- **[2,3,5]** → Volume processing (3D)
+- **[2,2,3]** → Hierarchical matrix (nested 2D)
+- **[7,11]** → High-dimensional sparse patterns
 
 ## Data Structures
 
@@ -51,6 +106,75 @@ typedef struct MembranePool {
     uint32_t allocated_count;
     pthread_mutex_t allocation_lock;
 } MembranePool;
+```
+
+### Tensor Membrane Structure
+
+```mermaid
+graph TD
+    subgraph "Tensor Membrane Hierarchy"
+        ROOT[Root Membrane<br/>ID: 1, Shape: [2,3,5]]
+        
+        subgraph "Child Membranes"
+            CHILD1[Child Membrane 1<br/>ID: 2, Shape: [2,3]]
+            CHILD2[Child Membrane 2<br/>ID: 3, Shape: [5]]
+            CHILD3[Child Membrane 3<br/>ID: 4, Shape: [7,11]]
+        end
+        
+        subgraph "Grandchildren"
+            GC1[Grandchild 1<br/>ID: 5, Shape: [2]]
+            GC2[Grandchild 2<br/>ID: 6, Shape: [3]]
+        end
+    end
+    
+    subgraph "Membrane Components"
+        META[Metadata<br/>• ID<br/>• Version<br/>• Permissions]
+        SHAPE[Prime Factors<br/>• [2,3,5]<br/>• Factor Count<br/>• Dimensions]
+        DATA[Tensor Data<br/>• Float Array<br/>• Data Size<br/>• Memory Layout]
+        PSYS[P-System Objects<br/>• Computational Objects<br/>• Energy Level<br/>• Object Count]
+        CONTEXT[Cognitive Context<br/>• Attention State<br/>• Pattern Data<br/>• Processing State]
+    end
+    
+    subgraph "Operations"
+        OPS[Membrane Operations]
+        CREATE[Create/Destroy]
+        RESIZE[Resize/Reshape]
+        SYNC[Synchronize]
+        TRANSFER[Transfer Objects]
+        COMPUTE[Compute]
+    end
+    
+    ROOT --> CHILD1
+    ROOT --> CHILD2
+    ROOT --> CHILD3
+    CHILD1 --> GC1
+    CHILD1 --> GC2
+    
+    ROOT --> META
+    ROOT --> SHAPE
+    ROOT --> DATA
+    ROOT --> PSYS
+    ROOT --> CONTEXT
+    
+    META --> OPS
+    SHAPE --> OPS
+    DATA --> OPS
+    PSYS --> OPS
+    CONTEXT --> OPS
+    
+    OPS --> CREATE
+    OPS --> RESIZE
+    OPS --> SYNC
+    OPS --> TRANSFER
+    OPS --> COMPUTE
+    
+    classDef membrane fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef component fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef operation fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    
+    class ROOT,CHILD1,CHILD2,CHILD3,GC1,GC2 membrane
+    class META,SHAPE,DATA,PSYS,CONTEXT component
+    class OPS,CREATE,RESIZE,SYNC,TRANSFER,COMPUTE operation
 ```
 
 ### Prime Factorization Utilities

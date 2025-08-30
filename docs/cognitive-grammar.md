@@ -2,6 +2,83 @@
 
 ## Overview
 
+```mermaid
+graph TD
+    subgraph "Cognitive Grammar Implementation"
+        subgraph "Input Processing"
+            TEXT[Text Input<br/>"hello world"]
+            TOKENIZE[Tokenization]
+            PARSE[Syntactic Parsing]
+        end
+        
+        subgraph "Hypergraph Encoding"
+            NODES[Create Nodes<br/>HypergraphNode]
+            CONCEPTS[Concept Nodes<br/>concept("hello")<br/>concept("world")]
+            LINKS[Link Nodes<br/>ordered-link]
+            TREE[Hypergraph Tree<br/>Structure]
+        end
+        
+        subgraph "ECAN Processing"
+            IMPORTANCE[Calculate Importance]
+            STI_CALC[STI Calculation<br/>Short-term]
+            LTI_CALC[LTI Calculation<br/>Long-term]
+            VLTI_CALC[VLTI Calculation<br/>Very Long-term]
+            STIMULATION_CALC[Stimulation Level]
+        end
+        
+        subgraph "PLN Reasoning"
+            TRUTH_VAL[Truth Value<br/>Assignment]
+            STRENGTH[Strength Calculation]
+            CONFIDENCE[Confidence Assessment]
+            INFERENCE_RULES[Inference Rules<br/>Deduction/Induction]
+        end
+        
+        subgraph "Output Generation"
+            SCHEME[Scheme Format<br/>Output]
+            RESPONSE[Cognitive Response]
+            MEMORY_UPDATE[Memory Update]
+        end
+    end
+    
+    TEXT --> TOKENIZE
+    TOKENIZE --> PARSE
+    PARSE --> NODES
+    
+    NODES --> CONCEPTS
+    NODES --> LINKS
+    CONCEPTS --> TREE
+    LINKS --> TREE
+    
+    TREE --> IMPORTANCE
+    IMPORTANCE --> STI_CALC
+    IMPORTANCE --> LTI_CALC
+    IMPORTANCE --> VLTI_CALC
+    IMPORTANCE --> STIMULATION_CALC
+    
+    STI_CALC --> TRUTH_VAL
+    LTI_CALC --> TRUTH_VAL
+    TRUTH_VAL --> STRENGTH
+    TRUTH_VAL --> CONFIDENCE
+    STRENGTH --> INFERENCE_RULES
+    CONFIDENCE --> INFERENCE_RULES
+    
+    INFERENCE_RULES --> SCHEME
+    SCHEME --> RESPONSE
+    RESPONSE --> MEMORY_UPDATE
+    
+    classDef input fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef hypergraph fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef ecan fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef pln fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef output fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    
+    class TEXT,TOKENIZE,PARSE input
+    class NODES,CONCEPTS,LINKS,TREE hypergraph
+    class IMPORTANCE,STI_CALC,LTI_CALC,VLTI_CALC,STIMULATION_CALC ecan
+    class TRUTH_VAL,STRENGTH,CONFIDENCE,INFERENCE_RULES pln
+    class SCHEME,RESPONSE,MEMORY_UPDATE output
+```
+
 This document describes the implemented hypergraph encoding system, ECAN attention allocation, and PLN probabilistic reasoning for the cognitive grammar kernel in the r9 shell.
 
 ## Hypergraph Encoding Implementation
