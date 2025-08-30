@@ -223,6 +223,32 @@ extern void b_membrane_sync(char **);
 extern void b_load_balance(char **);
 #endif
 
+/* GGUF and AI Chat Commands */
+extern void b_gguf_load(char **);
+extern void b_gguf_info(char **);
+extern void b_orchestrator_create(char **);
+extern void b_orchestrator_status(char **);
+extern void b_orchestrator_load_model(char **);
+extern void b_orchestrator_inference(char **);
+extern void b_airchat_create(char **);
+extern void b_airchat_load(char **);
+extern void b_airchat_chat(char **);
+extern void b_airchat_list(char **);
+extern void b_airchat_switch(char **);
+extern void b_airchat_history(char **);
+extern void b_airchat_websocket_start(char **);
+extern void b_airchat_websocket_stop(char **);
+extern void b_airchat_status(char **);
+extern void b_execution_engine_create(char **);
+extern void b_execution_engine_start(char **);
+extern void b_execution_engine_stop(char **);
+extern void b_execution_engine_status(char **);
+extern void b_execution_engine_websocket_start(char **);
+extern void b_hyper_pattern_analysis(char **);
+extern void b_spatial_transformation(char **);
+extern void b_supervisor_synthesis(char **);
+extern void b_grammar_parse(char **);
+
 /* Example Cognitive Commands (when ENABLE_COGNITIVE_EXAMPLES is defined) */
 extern void b_load_example_modules(char **);
 extern void b_test_pattern(char **);

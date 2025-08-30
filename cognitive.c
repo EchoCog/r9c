@@ -4,6 +4,9 @@
 
 #include "rc.h"
 #include "cognitive.h"
+#include "gguf.h"
+#include "or.h"
+#include "air.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1685,6 +1688,41 @@ void b_load_balance(char **av) {
 }
 
 #endif
+
+/* GGUF Commands */
+void b_gguf_load(char **av) {
+    if (!av[1]) {
+        rc_error("gguf-load: usage: gguf-load <model_path>");
+        return;
+    }
+    
+    gguf_model *model = gguf_load_model(av[1]);
+    if (model) {
+        fprint(1, "GGUF model loaded successfully: %s\n", av[1]);
+        gguf_free_model(model); /* For now, just test loading */
+    } else {
+        rc_error("gguf-load: failed to load model");
+    }
+}
+
+void b_gguf_info(char **av) {
+    if (!av[1]) {
+        rc_error("gguf-info: usage: gguf-info <model_path>");
+        return;
+    }
+    
+    gguf_model *model = gguf_load_model(av[1]);
+    if (model) {
+        char *info = NULL;
+        if (gguf_get_model_info(model, &info) == 0 && info) {
+            fprint(1, "%s", info);
+            free(info);
+        }
+        gguf_free_model(model);
+    } else {
+        rc_error("gguf-info: failed to load model");
+    }
+}
 
 /* Placeholder implementations for other commands - REMOVED (implemented above) */
 
