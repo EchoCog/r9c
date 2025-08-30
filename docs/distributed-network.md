@@ -24,22 +24,122 @@ Each rc shell instance operates as an autonomous cognitive agent:
 - **Emergent Intelligence**: Collective behavior from agent interactions
 
 ### Network Topology
-```
-    Agent-1     Agent-2     Agent-3
-       |           |           |
-    [Local]    [Local]    [Local]
-   Cognitive  Cognitive  Cognitive
-    Grammar    Grammar    Grammar
-       |           |           |
-       +-----[ Network ]-------+
-             Communication
-              & Membrane
-             Synchronization
+
+```mermaid
+graph TB
+    subgraph Agent1 ["Agent-1 (rc shell instance)"]
+        A1CG[Local Cognitive<br/>Grammar]
+        A1MEM[Tensor Membranes]
+        A1ATT[Attention State]
+    end
+    
+    subgraph Agent2 ["Agent-2 (rc shell instance)"]
+        A2CG[Local Cognitive<br/>Grammar]
+        A2MEM[Tensor Membranes]
+        A2ATT[Attention State]
+    end
+    
+    subgraph Agent3 ["Agent-3 (rc shell instance)"]
+        A3CG[Local Cognitive<br/>Grammar]
+        A3MEM[Tensor Membranes]
+        A3ATT[Attention State]
+    end
+    
+    subgraph Network ["Distributed Network Layer"]
+        DISC[Agent Discovery<br/>(UDP Broadcast)]
+        COMM[Communication<br/>(TCP/UDP)]
+        SYNC[Membrane Sync<br/>Protocol]
+    end
+    
+    A1CG --> DISC
+    A2CG --> DISC
+    A3CG --> DISC
+    
+    A1MEM --> SYNC
+    A2MEM --> SYNC
+    A3MEM --> SYNC
+    
+    A1ATT --> COMM
+    A2ATT --> COMM
+    A3ATT --> COMM
+    
+    DISC --> COMM
+    COMM --> SYNC
+    
+    classDef agent fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef network fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef cognitive fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    
+    class Agent1,Agent2,Agent3 agent
+    class Network network
+    class A1CG,A2CG,A3CG,A1MEM,A2MEM,A3MEM,A1ATT,A2ATT,A3ATT cognitive
 ```
 
 ## Communication Protocols - IMPLEMENTED
 
 ### Protocol Stack
+
+```mermaid
+graph TD
+    subgraph "Application Layer"
+        SHELL[Shell Commands]
+        COGNITIVE[Cognitive Operations]
+    end
+    
+    subgraph "Cognitive Protocol Layer"
+        ATTENTION[Attention Sync]
+        PATTERN[Pattern Sharing]
+        MEMORY[Memory Sync]
+        INFERENCE[Inference Queries]
+    end
+    
+    subgraph "Messaging Layer"
+        MSG[Cognitive Message Protocol]
+        SER[Serialization/Deserialization]
+    end
+    
+    subgraph "Transport Layer"
+        TCP[TCP - Reliable Communication]
+        UDP[UDP - Discovery & Broadcast]
+    end
+    
+    subgraph "Discovery Layer"
+        BROADCAST[UDP Broadcast Discovery]
+        HEARTBEAT[Agent Heartbeat]
+    end
+    
+    SHELL --> COGNITIVE
+    COGNITIVE --> ATTENTION
+    COGNITIVE --> PATTERN
+    COGNITIVE --> MEMORY
+    COGNITIVE --> INFERENCE
+    
+    ATTENTION --> MSG
+    PATTERN --> MSG
+    MEMORY --> MSG
+    INFERENCE --> MSG
+    
+    MSG --> SER
+    SER --> TCP
+    SER --> UDP
+    
+    UDP --> BROADCAST
+    UDP --> HEARTBEAT
+    
+    classDef app fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef cog fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef msg fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef trans fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef disc fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    
+    class SHELL,COGNITIVE app
+    class ATTENTION,PATTERN,MEMORY,INFERENCE cog
+    class MSG,SER msg
+    class TCP,UDP trans
+    class BROADCAST,HEARTBEAT disc
+```
+
+**Protocol Details:**
 1. **Transport Layer**: UDP for discovery, TCP for reliable communication
 2. **Messaging Layer**: Custom cognitive message protocol  
 3. **Cognitive Layer**: Attention and memory synchronization protocols

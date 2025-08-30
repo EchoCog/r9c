@@ -2,6 +2,92 @@
 
 ## Overview
 
+```mermaid
+graph TB
+    subgraph "Shell Integration Architecture"
+        subgraph "Core rc Shell"
+            SHELL[rc Shell Core]
+            PARSER[Command Parser]
+            EXEC[Command Executor]
+            BUILTIN[Built-in Commands]
+        end
+        
+        subgraph "Extension Layer"
+            HOOKS[Extension Hooks]
+            PLUGINS[Plugin System]
+            CONFIG[Configuration]
+        end
+        
+        subgraph "IPC Layer"
+            UNIX[Unix Domain Sockets]
+            TCP[TCP Sockets]
+            PIPES[Named Pipes]
+            IPC_API[IPC API]
+        end
+        
+        subgraph "Cognitive Layer"
+            SCHEME[Scheme/C Integration]
+            COGNITIVE[Cognitive Grammar]
+            GGML[ggml Tensor Ops]
+            ATTENTION[Attention State]
+        end
+        
+        subgraph "Network Layer"
+            DISCOVER[Agent Discovery]
+            SYNC[Membrane Sync]
+            DISTRIBUTE[Distributed Protocols]
+        end
+        
+        subgraph "External Systems"
+            AGENTS[Other rc Agents]
+            SERVICES[External Services]
+            MODELS[AI Models]
+        end
+    end
+    
+    SHELL --> PARSER
+    PARSER --> EXEC
+    EXEC --> BUILTIN
+    
+    SHELL --> HOOKS
+    HOOKS --> PLUGINS
+    PLUGINS --> CONFIG
+    
+    HOOKS --> IPC_API
+    IPC_API --> UNIX
+    IPC_API --> TCP
+    IPC_API --> PIPES
+    
+    HOOKS --> SCHEME
+    SCHEME --> COGNITIVE
+    COGNITIVE --> GGML
+    COGNITIVE --> ATTENTION
+    
+    IPC_API --> DISCOVER
+    DISCOVER --> SYNC
+    SYNC --> DISTRIBUTE
+    
+    UNIX --> AGENTS
+    TCP --> AGENTS
+    DISTRIBUTE --> AGENTS
+    TCP --> SERVICES
+    GGML --> MODELS
+    
+    classDef core fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef ext fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef ipc fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef cog fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef net fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef external fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    
+    class SHELL,PARSER,EXEC,BUILTIN core
+    class HOOKS,PLUGINS,CONFIG ext
+    class UNIX,TCP,PIPES,IPC_API ipc
+    class SCHEME,COGNITIVE,GGML,ATTENTION cog
+    class DISCOVER,SYNC,DISTRIBUTE net
+    class AGENTS,SERVICES,MODELS external
+```
+
 This document describes the integration of cognitive grammar capabilities into the rc shell, including IPC modules, ggml function mapping, and Scheme/C interface hooks.
 
 ## IPC Layer Extensions

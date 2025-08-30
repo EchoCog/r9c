@@ -6,6 +6,89 @@ This implementation provides a comprehensive GGUF inference engine with guile-ll
 
 ## Architecture Components
 
+```mermaid
+graph TB
+    subgraph "GGUF Inference Engine Architecture"
+        subgraph "User Interface Layer"
+            SHELL[rc Shell Interface]
+            AIRCHAT[AI Chat Interface]
+            WS[WebSocket Interface]
+        end
+        
+        subgraph "Orchestration Layer"
+            OR[Orchestrating Agent<br/>(or.h, or.c)]
+            NEURAL[Neural Tree Structure]
+            PATTERN[Pattern Analysis]
+            RESONANCE[Resonance Depth]
+        end
+        
+        subgraph "Execution Layer"
+            EE[Execution Engine<br/>(execution-engine.c)]
+            WORKERS[Worker Threads]
+            HYPER[Hyper-Pattern Analysis]
+            SPATIAL[Spatial Transformation]
+        end
+        
+        subgraph "AI Processing Layer"
+            AIR[AI Chatbot Interface<br/>(air.h, air.c)]
+            SESSION[Session Management]
+            PERSIST[Persistence Propagation]
+        end
+        
+        subgraph "Model Layer"
+            GGUF[GGUF Format Support<br/>(gguf.h, gguf.c)]
+            LLAMA[llama.cpp Integration]
+            GUILE[Guile Scheme Integration]
+        end
+        
+        subgraph "Grammar Layer"
+            PARSER[Grammar Parsers<br/>(r.y, r.l)]
+            GRAMMAR[Grammar Engine<br/>(grammar.c)]
+            ASM[Assembly Optimizations<br/>(r.s)]
+        end
+    end
+    
+    SHELL --> OR
+    AIRCHAT --> AIR
+    WS --> EE
+    
+    OR --> NEURAL
+    OR --> PATTERN
+    OR --> RESONANCE
+    
+    OR --> EE
+    EE --> WORKERS
+    EE --> HYPER
+    EE --> SPATIAL
+    
+    OR --> AIR
+    AIR --> SESSION
+    AIR --> PERSIST
+    
+    EE --> GGUF
+    AIR --> GGUF
+    GGUF --> LLAMA
+    GGUF --> GUILE
+    
+    OR --> PARSER
+    PARSER --> GRAMMAR
+    GRAMMAR --> ASM
+    
+    classDef ui fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef orch fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef exec fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef ai fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef model fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef grammar fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    
+    class SHELL,AIRCHAT,WS ui
+    class OR,NEURAL,PATTERN,RESONANCE orch
+    class EE,WORKERS,HYPER,SPATIAL exec
+    class AIR,SESSION,PERSIST ai
+    class GGUF,LLAMA,GUILE model
+    class PARSER,GRAMMAR,ASM grammar
+```
+
 ### 1. Orchestrating Agent (`or.h`, `or.c`)
 - **Orchestrator** class serving as the main coordination center
 - Neural tree structure with recursive propagation algorithms

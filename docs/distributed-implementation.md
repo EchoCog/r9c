@@ -6,6 +6,68 @@ This document describes the implemented distributed network protocols for cognit
 
 ## Architecture
 
+```mermaid
+graph LR
+    subgraph "Distributed Implementation Flow"
+        subgraph "Agent Discovery"
+            A1[Agent Startup]
+            A2[Broadcast Discovery]
+            A3[Receive Responses]
+            A4[Register Peers]
+        end
+        
+        subgraph "Communication Setup"
+            B1[Establish TCP Connections]
+            B2[Initialize Message Queues]
+            B3[Start Heartbeat Service]
+            B4[Enable Pattern Sharing]
+        end
+        
+        subgraph "Membrane Synchronization"
+            C1[Detect Membrane Changes]
+            C2[Version Comparison]
+            C3[Conflict Resolution]
+            C4[Broadcast Updates]
+        end
+        
+        subgraph "Cognitive Coordination"
+            D1[Attention State Sync]
+            D2[Pattern Distribution]
+            D3[Load Balancing]
+            D4[Collective Intelligence]
+        end
+    end
+    
+    A1 --> A2
+    A2 --> A3
+    A3 --> A4
+    A4 --> B1
+    
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> C1
+    
+    C1 --> C2
+    C2 --> C3
+    C3 --> C4
+    C4 --> D1
+    
+    D1 --> D2
+    D2 --> D3
+    D3 --> D4
+    
+    classDef discovery fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef comm fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    classDef membrane fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef cognitive fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    
+    class A1,A2,A3,A4 discovery
+    class B1,B2,B3,B4 comm
+    class C1,C2,C3,C4 membrane
+    class D1,D2,D3,D4 cognitive
+```
+
 ### Agent Node Model
 Each rc shell instance operates as an autonomous cognitive agent with:
 - **Local Processing**: Independent cognitive grammar and attention allocation
