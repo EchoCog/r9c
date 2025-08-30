@@ -107,6 +107,31 @@ static struct {
 	{ b_membrane_sync,	"membrane-sync" },
 	{ b_load_balance,	"load-balance" },
 #endif
+/* GGUF and AI Chat Commands */
+	{ b_gguf_load,		"gguf-load" },
+	{ b_gguf_info,		"gguf-info" },
+	{ b_orchestrator_create,	"orchestrator-create" },
+	{ b_orchestrator_status,	"orchestrator-status" },
+	{ b_orchestrator_load_model,	"orchestrator-load-model" },
+	{ b_orchestrator_inference,	"orchestrator-inference" },
+	{ b_airchat_create,	"airchat-create" },
+	{ b_airchat_load,	"airchat-load" },
+	{ b_airchat_chat,	"airchat-chat" },
+	{ b_airchat_list,	"airchat-list" },
+	{ b_airchat_switch,	"airchat-switch" },
+	{ b_airchat_history,	"airchat-history" },
+	{ b_airchat_websocket_start,	"airchat-websocket-start" },
+	{ b_airchat_websocket_stop,	"airchat-websocket-stop" },
+	{ b_airchat_status,	"airchat-status" },
+	{ b_execution_engine_create,	"execution-engine-create" },
+	{ b_execution_engine_start,	"execution-engine-start" },
+	{ b_execution_engine_stop,	"execution-engine-stop" },
+	{ b_execution_engine_status,	"execution-engine-status" },
+	{ b_execution_engine_websocket_start,	"execution-engine-websocket-start" },
+	{ b_hyper_pattern_analysis,	"hyper-pattern-analysis" },
+	{ b_spatial_transformation,	"spatial-transformation" },
+	{ b_supervisor_synthesis,	"supervisor-synthesis" },
+	{ b_grammar_parse,	"grammar-parse" },
 #ifdef ADDONS
 	ADDONS
 #endif
